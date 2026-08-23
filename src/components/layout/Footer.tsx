@@ -210,13 +210,11 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLogin }) => {
           <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-slate-500 text-center sm:text-left">
             <span className="font-semibold text-slate-300">MULTISERVICIOS ARGON</span>
             <span className="hidden sm:inline">•</span>
-            <span>RAMIREZ GONZALES ALFREDO</span>
-            <span className="hidden sm:inline">•</span>
             <span className="font-mono text-slate-400 font-bold">RUC 10058605692</span>
             <span className="hidden sm:inline">•</span>
             <span>Tamanco Viejo, Emilio San Martín</span>
             <span className="hidden sm:inline">•</span>
-            <span>© {currentYear}</span>
+            <span>© {currentYear} Todos los derechos reservados</span>
           </div>
 
         </div>

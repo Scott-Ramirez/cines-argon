@@ -432,7 +432,7 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
             <div className="p-6 space-y-3 text-xs text-slate-300 leading-relaxed overflow-y-auto flex-1 min-h-0">
               {activeModal === 'privacy' ? (
                 <>
-                  <p>En <strong>MULTISERVICIOS ARGON (Ramirez Gonzales Alfredo)</strong> respetamos tu privacidad:</p>
+                  <p>En <strong>MULTISERVICIOS ARGON</strong> respetamos tu privacidad:</p>
                   <ul className="space-y-1.5 list-disc pl-4 text-slate-400">
                     <li>Los datos solicitados (nombre, teléfono) para la reserva o emisión de boletos se utilizan exclusivamente para la gestión del servicio.</li>
                     <li>No compartimos tu información personal con terceros.</li>

@@ -26,31 +26,69 @@
   background: #374151;
 }
 
-/* Thermal Printer Specific CSS for 80mm & 58mm POS */
+/* Thermal Printer & Ticket Specific CSS (6 cm x 12 cm / 60mm x 120mm) */
 @media print {
+  @page {
+    size: 60mm 120mm;
+    margin: 0mm;
+  }
+
+  html, body {
+    width: 60mm !important;
+    min-width: 60mm !important;
+    max-width: 60mm !important;
+    height: 120mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   body * {
     visibility: hidden;
   }
-  #thermal-print-area, #thermal-print-area * {
+
+  #thermal-print-area,
+  #thermal-print-area * {
     visibility: visible;
   }
+
   #thermal-print-area {
     position: absolute;
     left: 0;
     top: 0;
-    width: 80mm;
-    margin: 0;
-    padding: 2mm;
-    background: white !important;
-    color: black !important;
-    font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+    width: 60mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
   }
+
+  .ticket-print-box {
+    width: 60mm !important;
+    height: 120mm !important;
+    max-width: 60mm !important;
+    max-height: 120mm !important;
+    box-sizing: border-box !important;
+    page-break-after: always !important;
+    break-after: page !important;
+    padding: 3mm 3.5mm !important;
+    margin: 0 auto !important;
+    border: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
   .no-print {
     display: none !important;
-  }
-  @page {
-    size: 80mm auto;
-    margin: 0;
   }
 }
 

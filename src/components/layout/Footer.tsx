@@ -219,18 +219,6 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLogin }) => {
             <span>© {currentYear}</span>
           </div>
 
-          {/* Intranet Staff Login Button */}
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onOpenLogin}
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-amber-500/40 text-slate-400 hover:text-amber-400 transition-all font-mono text-[11px] group"
-              title="Acceso para el personal / taquilla"
-            >
-              <Lock className="w-3 h-3 text-slate-500 group-hover:text-amber-400 transition-colors" />
-              <span>Intranet</span>
-            </button>
-          </div>
-
         </div>
 
       </div>

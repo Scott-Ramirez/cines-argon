@@ -1,39 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Movie, Showtime, Room, PricingTier, MovieRating, MovieStatus, Sale, HeroSlide } from '../core/types';
+import { Movie, Showtime, Room, PricingTier, Sale, HeroSlide } from '../core/types';
 import { cinemaStorage } from '../services/storage/cinemaStorage';
-import { sanitizeInput } from '../core/security/crypto';
-import { tmdbApi, TmdbSearchResult } from '../services/api/cinemaApi';
+import { tmdbApi } from '../services/api/cinemaApi';
 import {
   Film,
   Clock,
-  Calendar,
   DollarSign,
-  Database,
-  Plus,
-  Trash2,
-  Edit,
-  Check,
-  AlertCircle,
-  RefreshCw,
   BarChart3,
-  Sparkles,
-  Eye,
-  EyeOff,
-  ArrowUp,
-  ArrowDown,
-  Image as ImageIcon,
-  Sliders,
-  Search,
-  Loader2,
-  Globe,
-  Star,
-  Download,
-  Play,
-  CheckCircle2,
+  Sparkles
 } from 'lucide-react';
 
+// Subcomponents
+import { AdminHeroTab } from '../components/admin/tabs/AdminHeroTab';
+import { AdminMoviesTab } from '../components/admin/tabs/AdminMoviesTab';
+import { AdminShowtimesTab } from '../components/admin/tabs/AdminShowtimesTab';
+import { AdminPricingTab } from '../components/admin/tabs/AdminPricingTab';
+import { AdminAuditTab } from '../components/admin/tabs/AdminAuditTab';
+
+// Modals
+import { HeroSlideModal } from '../components/admin/modals/HeroSlideModal';
+import { MovieModal } from '../components/admin/modals/MovieModal';
+import { TmdbExploreModal } from '../components/admin/modals/TmdbExploreModal';
+import { ShowtimeModal } from '../components/admin/modals/ShowtimeModal';
+
 export const AdminView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'movies' | 'showtimes' | 'hero' | 'pricing' | 'audit'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'movies' | 'showtimes' | 'pricing' | 'audit'>('hero');
+  
+  // Data States
   const [movies, setMovies] = useState<Movie[]>([]);
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -42,67 +35,18 @@ export const AdminView: React.FC = () => {
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
   const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
 
-  // Movie Form Modal State
-  const [isMovieModalOpen, setIsMovieModalOpen] = useState<boolean>(false);
-  const [editingMovie, setEditingMovie] = useState<Partial<Movie>>({
-    title: '',
-    originalTitle: '',
-    synopsis: '',
-    durationMinutes: 120,
-    rating: 'APT',
-    genre: ['Acción'],
-    posterUrl: '',
-    backdropUrl: '',
-    status: 'CARTELERA',
-    director: '',
-    trailerUrl: '',
-  });
-
-  // TMDB Integration States
-  const [tmdbSearchQuery, setTmdbSearchQuery] = useState<string>('');
-  const [isSearchingTmdb, setIsSearchingTmdb] = useState<boolean>(false);
-  const [tmdbSearchResults, setTmdbSearchResults] = useState<TmdbSearchResult[]>([]);
-  const [isTmdbExploreOpen, setIsTmdbExploreOpen] = useState<boolean>(false);
-  const [tmdbExploreTab, setTmdbExploreTab] = useState<'now-playing' | 'popular'>('now-playing');
-  const [tmdbExploreList, setTmdbExploreList] = useState<TmdbSearchResult[]>([]);
-  const [isLoadingExplore, setIsLoadingExplore] = useState<boolean>(false);
-  const [importSuccessMessage, setImportSuccessMessage] = useState<string>('');
-
-  // Hero TMDB Search State
-  const [heroTmdbSearchQuery, setHeroTmdbSearchQuery] = useState<string>('');
-  const [isSearchingHeroTmdb, setIsSearchingHeroTmdb] = useState<boolean>(false);
-  const [heroTmdbResults, setHeroTmdbResults] = useState<TmdbSearchResult[]>([]);
-
-  // Pricing Toast State
-  const [pricingSavedMessage, setPricingSavedMessage] = useState<string>('');
-
-  // Showtime Form State
-  const [isShowtimeModalOpen, setIsShowtimeModalOpen] = useState<boolean>(false);
-  const [newShowtime, setNewShowtime] = useState({
-    movieId: '',
-    roomId: '',
-    date: new Date().toISOString().split('T')[0],
-    startTime: '17:30',
-    endTime: '19:50',
-    availableSeats: 25
-  });
-
-  // Hero Slide Form State
+  // Modals Visibility States
   const [isHeroModalOpen, setIsHeroModalOpen] = useState<boolean>(false);
-  const [editingHeroSlide, setEditingHeroSlide] = useState<Partial<HeroSlide>>({
-    title: '',
-    tagline: 'FUNCIÓN DE LA TARDE (FAMILIAR)',
-    time: '5:30 PM',
-    rating: 'APT',
-    durationMinutes: 120,
-    genres: ['Animación', 'Familiar'],
-    synopsis: '',
-    backdropUrl: '',
-    posterUrl: '',
-    active: true,
-    order: 1,
-    movieId: ''
-  });
+  const [editingHeroSlide, setEditingHeroSlide] = useState<Partial<HeroSlide>>({});
+
+  const [isMovieModalOpen, setIsMovieModalOpen] = useState<boolean>(false);
+  const [editingMovie, setEditingMovie] = useState<Partial<Movie>>({});
+
+  const [isTmdbExploreOpen, setIsTmdbExploreOpen] = useState<boolean>(false);
+  const [isShowtimeModalOpen, setIsShowtimeModalOpen] = useState<boolean>(false);
+
+  // Toast message
+  const [pricingSavedMessage, setPricingSavedMessage] = useState<string>('');
 
   const loadData = () => {
     setMovies(cinemaStorage.getMovies());
@@ -129,26 +73,99 @@ export const AdminView: React.FC = () => {
     return () => window.removeEventListener('argon_storage_update', loadData);
   }, []);
 
-  // --- Movie Handlers ---
-  const handleSaveMovie = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingMovie.title || !editingMovie.synopsis) return;
+  // -------------------------------------------------------------
+  // HERO SLIDES HANDLERS
+  // -------------------------------------------------------------
+  const handleOpenCreateHeroSlide = () => {
+    const firstMovie = movies[0];
+    if (firstMovie) {
+      setEditingHeroSlide({
+        movieId: firstMovie.id,
+        title: firstMovie.title,
+        tagline: firstMovie.rating === 'APT' ? 'FUNCIÓN DE LA TARDE (FAMILIAR)' : 'ESTRENO ESTELAR DE LA NOCHE',
+        time: firstMovie.rating === 'APT' ? '5:30 PM' : '8:00 PM',
+        rating: firstMovie.rating,
+        durationMinutes: firstMovie.durationMinutes,
+        genres: firstMovie.genre && firstMovie.genre.length > 0 ? firstMovie.genre : ['Cine'],
+        synopsis: firstMovie.synopsis,
+        backdropUrl: firstMovie.backdropUrl || firstMovie.posterUrl,
+        posterUrl: firstMovie.posterUrl,
+        active: true,
+        order: heroSlides.length + 1
+      });
+    } else {
+      setEditingHeroSlide({
+        title: '',
+        tagline: 'FUNCIÓN DE LA TARDE (FAMILIAR)',
+        time: '5:30 PM',
+        rating: 'APT',
+        durationMinutes: 120,
+        genres: ['Animación', 'Familiar'],
+        synopsis: '',
+        backdropUrl: '',
+        posterUrl: '',
+        active: true,
+        order: heroSlides.length + 1,
+        movieId: ''
+      });
+    }
+    setIsHeroModalOpen(true);
+  };
 
-    const movieToSave: Movie = {
-      id: editingMovie.id || crypto.randomUUID(),
-      title: sanitizeInput(editingMovie.title || ''),
-      originalTitle: sanitizeInput(editingMovie.originalTitle || ''),
-      synopsis: sanitizeInput(editingMovie.synopsis || ''),
-      durationMinutes: Number(editingMovie.durationMinutes) || 120,
-      rating: (editingMovie.rating as MovieRating) || 'APT',
-      genre: typeof editingMovie.genre === 'string' ? (editingMovie.genre as string).split(',').map(s => s.trim()) : editingMovie.genre || ['General'],
-      posterUrl: editingMovie.posterUrl || 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=800&auto=format&fit=crop',
-      backdropUrl: editingMovie.backdropUrl || '',
-      status: (editingMovie.status as MovieStatus) || 'CARTELERA'
+  const handleOpenEditHeroSlide = (slide: HeroSlide) => {
+    setEditingHeroSlide(slide);
+    setIsHeroModalOpen(true);
+  };
+
+  const handleSaveHeroSlide = (slideData: Partial<HeroSlide>) => {
+    const newSlide: HeroSlide = {
+      id: slideData.id || crypto.randomUUID(),
+      title: slideData.title || '',
+      tagline: slideData.tagline || '',
+      time: slideData.time || '',
+      rating: slideData.rating || 'APT',
+      durationMinutes: slideData.durationMinutes || 120,
+      genres: slideData.genres || [],
+      synopsis: slideData.synopsis || '',
+      backdropUrl: slideData.backdropUrl || '',
+      posterUrl: slideData.posterUrl || '',
+      active: slideData.active ?? true,
+      order: slideData.order ?? (heroSlides.length + 1),
+      movieId: slideData.movieId || undefined
     };
 
-    cinemaStorage.saveMovie(movieToSave);
-    setIsMovieModalOpen(false);
+    cinemaStorage.saveHeroSlide(newSlide);
+    setIsHeroModalOpen(false);
+  };
+
+  const handleToggleActiveHeroSlide = (slide: HeroSlide) => {
+    cinemaStorage.saveHeroSlide({ ...slide, active: !slide.active });
+  };
+
+  const handleDeleteHeroSlide = (slideId: string) => {
+    if (confirm('¿Estás seguro de eliminar esta diapositiva del carrusel?')) {
+      cinemaStorage.deleteHeroSlide(slideId);
+    }
+  };
+
+  const handleMoveSlideOrder = (index: number, direction: 'up' | 'down') => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    if (newIndex < 0 || newIndex >= heroSlides.length) return;
+
+    const list = [...heroSlides];
+    const temp = list[index];
+    list[index] = list[newIndex];
+    list[newIndex] = temp;
+
+    list.forEach((slide, idx) => {
+      cinemaStorage.saveHeroSlide({ ...slide, order: idx + 1 });
+    });
+  };
+
+  // -------------------------------------------------------------
+  // MOVIES HANDLERS
+  // -------------------------------------------------------------
+  const handleOpenCreateMovie = () => {
     setEditingMovie({
       title: '',
       originalTitle: '',
@@ -158,347 +175,193 @@ export const AdminView: React.FC = () => {
       genre: ['Acción'],
       posterUrl: '',
       backdropUrl: '',
-      status: 'CARTELERA'
+      status: 'CARTELERA',
+      director: '',
+      trailerUrl: '',
     });
+    setIsMovieModalOpen(true);
   };
 
-  const handleDeleteMovie = (id: string) => {
-    if (confirm('¿Está seguro de eliminar esta película de la cartelera?')) {
-      cinemaStorage.deleteMovie(id);
-    }
+  const handleOpenEditMovie = (movie: Movie) => {
+    setEditingMovie(movie);
+    setIsMovieModalOpen(true);
   };
 
-  // --- TMDB Handlers ---
-  const handleSearchTmdb = async (query: string) => {
-    if (!query.trim()) return;
-    setIsSearchingTmdb(true);
-    try {
-      const results = await tmdbApi.search(query);
-      setTmdbSearchResults(results);
-    } catch (err: any) {
-      console.warn('TMDB search error:', err.message);
-      setTmdbSearchResults([]);
-    } finally {
-      setIsSearchingTmdb(false);
-    }
-  };
-
-  const handleSelectTmdbMovie = async (tmdbId: number) => {
-    setIsSearchingTmdb(true);
-    try {
-      const details = await tmdbApi.getDetails(tmdbId);
-      if (details) {
-        setEditingMovie(prev => ({
-          ...prev,
-          title: details.title,
-          originalTitle: details.originalTitle,
-          synopsis: details.synopsis,
-          durationMinutes: details.durationMinutes,
-          rating: details.rating,
-          genre: details.genres.length > 0 ? details.genres : ['Acción'],
-          posterUrl: details.posterUrl,
-          backdropUrl: details.backdropUrl,
-          director: details.director || '',
-          trailerUrl: details.trailerUrl || '',
-        }));
-        setTmdbSearchResults([]);
-        setTmdbSearchQuery('');
-      }
-    } catch (err: any) {
-      console.warn('Error fetching TMDB details:', err.message);
-    } finally {
-      setIsSearchingTmdb(false);
-    }
-  };
-
-  const handleLoadExploreTmdb = async (tab: 'now-playing' | 'popular') => {
-    setTmdbExploreTab(tab);
-    setIsLoadingExplore(true);
-    try {
-      const data = tab === 'now-playing' ? await tmdbApi.getNowPlaying() : await tmdbApi.getPopular();
-      setTmdbExploreList(data);
-    } catch (err: any) {
-      console.warn('Error loading TMDB explore:', err.message);
-      setTmdbExploreList([]);
-    } finally {
-      setIsLoadingExplore(false);
-    }
-  };
-
-  const handleDirectImportTmdb = async (tmdbId: number, status: MovieStatus = 'CARTELERA') => {
-    try {
-      const imported = await tmdbApi.importMovie(tmdbId, status);
-      if (imported) {
-        cinemaStorage.saveMovie(imported);
-        setImportSuccessMessage(`¡"${imported.title}" importada con éxito!`);
-        setTimeout(() => setImportSuccessMessage(''), 4000);
-      }
-    } catch (err: any) {
-      alert('No se pudo importar la película: ' + err.message);
-    }
-  };
-
-
-  // --- Showtime Handlers ---
-  const handleSaveShowtime = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newShowtime.movieId || !newShowtime.roomId) return;
-
-    const room = rooms.find(r => r.id === newShowtime.roomId);
-    const showtimeToSave: Showtime = {
-      id: crypto.randomUUID(),
-      movieId: newShowtime.movieId,
-      roomId: newShowtime.roomId,
-      date: newShowtime.date,
-      startTime: newShowtime.startTime,
-      endTime: newShowtime.endTime,
-      availableSeats: room ? room.capacity : 25,
+  const handleSaveMovie = (movieData: Partial<Movie>) => {
+    const movieToSave: Movie = {
+      id: movieData.id || crypto.randomUUID(),
+      title: movieData.title || '',
+      originalTitle: movieData.originalTitle || '',
+      synopsis: movieData.synopsis || '',
+      durationMinutes: movieData.durationMinutes || 120,
+      rating: movieData.rating || 'APT',
+      genre: movieData.genre || ['Acción'],
+      posterUrl: movieData.posterUrl || '',
+      backdropUrl: movieData.backdropUrl || '',
+      status: movieData.status || 'CARTELERA',
+      director: movieData.director || '',
+      trailerUrl: movieData.trailerUrl || '',
     };
 
-    cinemaStorage.saveShowtime(showtimeToSave);
+    cinemaStorage.saveMovie(movieToSave);
+    setIsMovieModalOpen(false);
+  };
+
+  const handleDeleteMovie = (movieId: string) => {
+    if (confirm('¿Estás seguro de eliminar esta película?')) {
+      cinemaStorage.deleteMovie(movieId);
+    }
+  };
+
+  const handleDirectImportTmdb = async (tmdbId: number, targetStatus: 'CARTELERA' | 'PROXIMAMENTE') => {
+    try {
+      const details = await tmdbApi.getDetails(tmdbId);
+      const newMovie: Movie = {
+        id: crypto.randomUUID(),
+        title: details.title,
+        originalTitle: details.originalTitle,
+        synopsis: details.synopsis,
+        durationMinutes: details.durationMinutes || 120,
+        genre: details.genres || ['Cine'],
+        posterUrl: details.posterUrl,
+        backdropUrl: details.backdropUrl || details.posterUrl,
+        trailerUrl: details.trailerUrl || '',
+        director: details.director || '',
+        rating: 'APT',
+        status: targetStatus,
+      };
+
+      cinemaStorage.saveMovie(newMovie);
+      setIsTmdbExploreOpen(false);
+      alert(`"${details.title}" fue importada exitosamente.`);
+    } catch (e) {
+      console.error(e);
+      alert('Error importando película desde TMDB');
+    }
+  };
+
+  // -------------------------------------------------------------
+  // SHOWTIMES HANDLERS
+  // -------------------------------------------------------------
+  const handleOpenCreateShowtime = () => {
+    if (movies.length === 0) {
+      alert('Primero debes agregar al menos una película en la cartelera.');
+      return;
+    }
+    setIsShowtimeModalOpen(true);
+  };
+
+  const handleSaveShowtime = (showtimeData: {
+    movieId: string;
+    roomId: string;
+    date: string;
+    startTime: string;
+    endTime?: string;
+    availableSeats: number;
+  }) => {
+    const movie = movies.find(m => m.id === showtimeData.movieId);
+    const duration = movie ? movie.durationMinutes : 120;
+    
+    // Auto calculate end time
+    const [startH, startM] = showtimeData.startTime.split(':').map(Number);
+    const totalMinutes = startH * 60 + startM + duration;
+    const endH = Math.floor(totalMinutes / 60) % 24;
+    const endM = totalMinutes % 60;
+    const calculatedEndTime = `${String(endH).padStart(2, '0')}:${String(endM).padStart(2, '0')}`;
+
+    const newSt: Showtime = {
+      id: crypto.randomUUID(),
+      movieId: showtimeData.movieId,
+      roomId: showtimeData.roomId,
+      date: showtimeData.date,
+      startTime: showtimeData.startTime,
+      endTime: calculatedEndTime,
+      availableSeats: showtimeData.availableSeats,
+    };
+
+    cinemaStorage.saveShowtime(newSt);
     setIsShowtimeModalOpen(false);
   };
 
-  const handleDeleteShowtime = (id: string) => {
-    if (confirm('¿Eliminar este horario de función?')) {
-      cinemaStorage.deleteShowtime(id);
+  const handleDeleteShowtime = (showtimeId: string) => {
+    if (confirm('¿Eliminar esta función?')) {
+      cinemaStorage.deleteShowtime(showtimeId);
     }
   };
 
-  // --- Hero Slide TMDB Handlers ---
-  const handleSearchHeroTmdb = async (query: string) => {
-    if (!query.trim()) return;
-    setIsSearchingHeroTmdb(true);
-    try {
-      const results = await tmdbApi.search(query);
-      setHeroTmdbResults(results);
-    } catch (err: any) {
-      console.warn('Hero TMDB search error:', err.message);
-      setHeroTmdbResults([]);
-    } finally {
-      setIsSearchingHeroTmdb(false);
-    }
+  // -------------------------------------------------------------
+  // PRICING HANDLERS
+  // -------------------------------------------------------------
+  const handlePriceInputChange = (type: string, value: string) => {
+    setPriceInputs(prev => ({ ...prev, [type]: value }));
   };
 
-  const handleSelectHeroTmdbMovie = async (tmdbId: number) => {
-    setIsSearchingHeroTmdb(true);
-    try {
-      const details = await tmdbApi.getDetails(tmdbId);
-      if (details) {
-        setEditingHeroSlide(prev => ({
-          ...prev,
-          title: details.title,
-          tagline: details.rating === 'APT' ? 'FUNCIÓN DE LA TARDE (FAMILIAR / NIÑOS)' : 'ESTRENO ESTELAR (+12 / ADULTOS)',
-          time: details.rating === 'APT' ? '5:30 PM' : '8:00 PM',
-          rating: details.rating,
-          durationMinutes: details.durationMinutes,
-          genres: details.genres.length > 0 ? details.genres : ['Cine'],
-          synopsis: details.synopsis,
-          backdropUrl: details.backdropUrl,
-          posterUrl: details.posterUrl,
-        }));
-        setHeroTmdbResults([]);
-        setHeroTmdbSearchQuery('');
-      }
-    } catch (err: any) {
-      console.warn('Error fetching TMDB details for hero:', err.message);
-    } finally {
-      setIsSearchingHeroTmdb(false);
-    }
-  };
-
-  // --- Hero Slide Handlers ---
-  const handlePopulateFromMovie = (movieId: string) => {
-    const movie = movies.find(m => m.id === movieId);
-    if (!movie) return;
-
-    setEditingHeroSlide(prev => ({
-      ...prev,
-      movieId: movie.id,
-      title: movie.title,
-      rating: movie.rating === 'APT' ? 'APT (Niños)' : movie.rating,
-      durationMinutes: movie.durationMinutes,
-      genres: movie.genre,
-      synopsis: movie.synopsis,
-      posterUrl: movie.posterUrl,
-      backdropUrl: movie.backdropUrl || movie.posterUrl,
-      tagline: movie.rating === 'APT' ? 'FUNCIÓN DE LA TARDE (FAMILIAR / NIÑOS)' : 'FUNCIÓN ESTELAR (+12 / ADULTOS)',
-      time: movie.rating === 'APT' ? '5:30 PM' : '8:00 PM',
-    }));
-  };
-
-  const handleSaveHeroSlide = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingHeroSlide.title || !editingHeroSlide.backdropUrl) {
-      alert('Por favor ingrese el título y la URL de la imagen de fondo.');
+  const handleSavePrice = (type: string) => {
+    const val = parseFloat(priceInputs[type]);
+    if (isNaN(val) || val <= 0) {
+      alert('Por favor ingresa un precio válido mayor a 0');
       return;
     }
-
-    const slideToSave: HeroSlide = {
-      id: editingHeroSlide.id || crypto.randomUUID(),
-      title: sanitizeInput(editingHeroSlide.title || ''),
-      tagline: sanitizeInput(editingHeroSlide.tagline || 'ESTRENO DESTACADO'),
-      time: sanitizeInput(editingHeroSlide.time || '5:30 PM'),
-      rating: sanitizeInput(editingHeroSlide.rating || 'APT'),
-      durationMinutes: Number(editingHeroSlide.durationMinutes) || 120,
-      genres: Array.isArray(editingHeroSlide.genres) 
-        ? editingHeroSlide.genres 
-        : typeof editingHeroSlide.genres === 'string' 
-          ? (editingHeroSlide.genres as string).split(',').map(s => s.trim()) 
-          : ['Cine'],
-      synopsis: sanitizeInput(editingHeroSlide.synopsis || ''),
-      backdropUrl: editingHeroSlide.backdropUrl || '',
-      posterUrl: editingHeroSlide.posterUrl || '',
-      active: editingHeroSlide.active ?? true,
-      order: editingHeroSlide.order ?? (heroSlides.length + 1),
-      movieId: editingHeroSlide.movieId || undefined
-    };
-
-    cinemaStorage.saveHeroSlide(slideToSave);
-    setIsHeroModalOpen(false);
-    setEditingHeroSlide({
-      title: '',
-      tagline: 'FUNCIÓN DE LA TARDE (FAMILIAR)',
-      time: '5:30 PM',
-      rating: 'APT',
-      durationMinutes: 120,
-      genres: ['Animación', 'Familiar'],
-      synopsis: '',
-      backdropUrl: '',
-      posterUrl: '',
-      active: true,
-      order: 1,
-      movieId: ''
-    });
-  };
-
-  const handleDeleteHeroSlide = (id: string) => {
-    if (confirm('¿Desea eliminar esta diapositiva del carrusel hero?')) {
-      cinemaStorage.deleteHeroSlide(id);
-    }
-  };
-
-  const handleToggleHeroSlide = (id: string) => {
-    cinemaStorage.toggleHeroSlideStatus(id);
-  };
-
-  const handleMoveSlide = (index: number, direction: 'up' | 'down') => {
-    const newSlides = [...heroSlides];
-    const targetIndex = direction === 'up' ? index - 1 : index + 1;
-    if (targetIndex < 0 || targetIndex >= newSlides.length) return;
-
-    const temp = newSlides[index];
-    newSlides[index] = newSlides[targetIndex];
-    newSlides[targetIndex] = temp;
-
-    // Update order numbers
-    newSlides.forEach((s, idx) => {
-      s.order = idx + 1;
-    });
-
-    cinemaStorage.saveHeroSlides(newSlides);
-    setHeroSlides(newSlides);
-  };
-
-  // --- Pricing Handlers ---
-  const handlePriceInputChange = (index: number, type: string, rawVal: string) => {
-    setPriceInputs(prev => ({ ...prev, [type]: rawVal }));
-    const parsed = parseFloat(rawVal);
-    if (!isNaN(parsed) && parsed >= 0) {
-      const updated = [...pricing];
-      updated[index].basePrice = parsed;
-      cinemaStorage.savePricing(updated);
-      setPricing(updated);
-    }
-  };
-
-  const handlePriceInputBlur = (index: number, type: string) => {
-    const rawVal = priceInputs[type];
-    const parsed = parseFloat(rawVal);
-    if (isNaN(parsed) || parsed < 0) {
-      const fallback = pricing[index]?.basePrice ?? 0;
-      setPriceInputs(prev => ({ ...prev, [type]: fallback.toString() }));
-    }
-  };
-
-  const handleSaveAllPricing = async () => {
-    try {
-      await cinemaStorage.savePricing(pricing);
-      setPricingSavedMessage('✅ Tarifas y precios guardados con éxito en la base de datos');
-      setTimeout(() => setPricingSavedMessage(''), 4000);
-    } catch (err: any) {
-      alert('Error al guardar tarifas: ' + err.message);
-    }
-  };
-
-  const handleInitializeDefaultPricing = async () => {
-    const defaultTiers: PricingTier[] = [
-      { id: crypto.randomUUID(), type: 'GENERAL', label: 'Boleto General', description: 'Acceso para adultos', basePrice: 18.00 },
-      { id: crypto.randomUUID(), type: 'NINO', label: 'Niños (Hasta 11 años)', description: 'Tarifa infantil reducida', basePrice: 13.50 },
-      { id: crypto.randomUUID(), type: 'ADULTO_MAYOR', label: 'Adulto Mayor (60+)', description: 'Descuento con documento', basePrice: 13.50 },
-      { id: crypto.randomUUID(), type: 'PROMO_DUO', label: 'Promo Pareja (2x)', description: 'Paquete 2 entradas generales', basePrice: 30.00 },
-    ];
-    await cinemaStorage.savePricing(defaultTiers);
-    setPricing(defaultTiers);
-    setPriceInputs({
-      GENERAL: '18',
-      NINO: '13.5',
-      ADULTO_MAYOR: '13.5',
-      PROMO_DUO: '30',
-    });
-    setPricingSavedMessage('✅ Tarifas estándar inicializadas y guardadas en MySQL');
+    const updatedPricing = pricing.map(p => p.type === type ? { ...p, basePrice: val } : p);
+    cinemaStorage.savePricing(updatedPricing);
+    setPricing(updatedPricing);
+    setPricingSavedMessage(`Tarifa ${type} actualizada a S/. ${val.toFixed(2)} correctamente.`);
     setTimeout(() => setPricingSavedMessage(''), 4000);
   };
 
-  // --- Limpiar Cache y Re-sincronizar con MySQL ---
-  const handleResetData = async () => {
-    if (confirm('¿Desea limpiar el caché local y re-sincronizar con la base de datos de Cines Argón?')) {
-      cinemaStorage.clearLocalCache();
-      await cinemaStorage.syncFromBackend();
-      loadData();
-      alert('Caché sincronizado con la base de datos.');
-    }
+  const handleSaveAllPrices = () => {
+    const updatedPricing = pricing.map(p => {
+      const val = parseFloat(priceInputs[p.type]);
+      return !isNaN(val) && val > 0 ? { ...p, basePrice: val } : p;
+    });
+    cinemaStorage.savePricing(updatedPricing);
+    setPricing(updatedPricing);
+    setPricingSavedMessage('¡Todas las tarifas y precios fueron actualizados exitosamente!');
+    setTimeout(() => setPricingSavedMessage(''), 4000);
   };
 
-  const totalRevenue = sales.reduce((sum, s) => sum + s.totalAmount, 0);
-  const totalTicketsSold = sales.reduce((sum, s) => sum + s.totalTickets, 0);
+  const handleResetStandardPricing = () => {
+    const standardTiers: PricingTier[] = [
+      { id: crypto.randomUUID(), type: 'GENERAL', label: 'General', description: 'Entrada General (Adulto)', basePrice: 18.00 },
+      { id: crypto.randomUUID(), type: 'NINO', label: 'Niños', description: 'Niños (Menores de 12 años)', basePrice: 13.50 },
+      { id: crypto.randomUUID(), type: 'ADULTO_MAYOR', label: 'Adulto Mayor', description: 'Adulto Mayor (+60 años / Conadis)', basePrice: 13.50 },
+      { id: crypto.randomUUID(), type: 'PROMO_DUO', label: 'Promo Dúo', description: 'Combo Dúo (2 Entradas Generales)', basePrice: 30.00 },
+    ];
+    cinemaStorage.savePricing(standardTiers);
+    setPricing(standardTiers);
+    setPricingSavedMessage('Tarifas estándar cargadas con éxito.');
+    setTimeout(() => setPricingSavedMessage(''), 4000);
+  };
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-100 p-4 lg:p-8 animate-fade-in no-print">
+    <div className="min-h-screen bg-[#07090e] text-slate-100 p-4 sm:p-6 lg:p-8 space-y-8 animate-fade-in">
+      
+      {/* Admin Top Header & Navigation Tabs */}
       <div className="max-w-7xl mx-auto space-y-6">
-
-        {/* Top Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-slate-900/90 border border-slate-800 p-5 rounded-2xl">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-              <Database className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-white font-sans">PANEL DE ADMINISTRACIÓN GENERAL</h1>
-              <p className="text-xs text-slate-400">Gestión de carrusel hero, cartelera, horarios, sala y auditoría</p>
-            </div>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800 pb-6">
+          <div>
+            <span className="text-[11px] font-mono text-amber-400 uppercase tracking-widest block font-bold">
+              Panel Administrativo de Control
+            </span>
+            <h1 className="text-2xl sm:text-3xl font-black font-sans text-white mt-1">
+              GESTIÓN DE CINES ARGÓN
+            </h1>
           </div>
 
-          {/* Factory Reset */}
-          <button
-            onClick={handleResetData}
-            className="px-3.5 py-2 bg-rose-950/60 hover:bg-rose-900 border border-rose-600/40 text-rose-300 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            <span>Restablecer Datos Demo</span>
-          </button>
+          <div className="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Sala Única (VIP 25 Butacas)</span>
+          </div>
         </div>
 
-        {/* Admin Tabs */}
-        <div className="flex border-b border-slate-800 space-x-2 overflow-x-auto">
-          
-          {/* TAB: HERO CAROUSEL */}
+        {/* Tab Navigation Pill Bar */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-800/80">
           <button
             onClick={() => setActiveTab('hero')}
-            className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'hero'
-                ? 'border-amber-400 text-amber-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
             <Sparkles className="w-4 h-4" />
@@ -507,1245 +370,132 @@ export const AdminView: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('movies')}
-            className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'movies'
-                ? 'border-amber-400 text-amber-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
             <Film className="w-4 h-4" />
-            <span>Películas ({movies.length})</span>
+            <span>Películas & TMDB ({movies.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('showtimes')}
-            className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'showtimes'
-                ? 'border-amber-400 text-amber-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
             <Clock className="w-4 h-4" />
-            <span>Funciones & Horarios ({showtimes.length})</span>
+            <span>Horarios & Funciones ({showtimes.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('pricing')}
-            className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'pricing'
-                ? 'border-amber-400 text-amber-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
             <DollarSign className="w-4 h-4" />
-            <span>Tarifas & Precios</span>
+            <span>Tarifas y Precios</span>
           </button>
 
           <button
             onClick={() => setActiveTab('audit')}
-            className={`px-4 py-3 text-xs font-bold border-b-2 flex items-center gap-2 transition-all whitespace-nowrap ${
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
               activeTab === 'audit'
-                ? 'border-amber-400 text-amber-400'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            <span>Auditoría & Ventas</span>
+            <span>Auditoría de Ventas</span>
           </button>
         </div>
 
-        {/* ========================================================= */}
-        {/* TAB: HERO CAROUSEL MANAGER */}
-        {/* ========================================================= */}
+        {/* Dynamic Tab Content Renderer */}
         {activeTab === 'hero' && (
-          <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-900/60 p-4 rounded-2xl border border-slate-800">
-              <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-400" />
-                  Configuración del Banner / Carrusel Principal (Hero)
-                </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Personaliza los títulos, horarios (ej. 5:30 PM / 8:00 PM), imágenes de fondo y etiquetas que ven los clientes en el inicio.
-                </p>
-              </div>
-
-              <button
-                onClick={() => {
-                  const firstMovie = movies.length > 0 ? movies[0] : null;
-                  setEditingHeroSlide({
-                    title: firstMovie ? firstMovie.title : '',
-                    tagline: firstMovie ? (firstMovie.rating === 'APT' ? 'FUNCIÓN DE LA TARDE (FAMILIAR / NIÑOS)' : 'ESTRENO ESTELAR (+12 / ADULTOS)') : 'ESTRENO DESTACADO',
-                    time: firstMovie ? (firstMovie.rating === 'APT' ? '5:30 PM' : '8:00 PM') : '5:30 PM',
-                    rating: firstMovie ? (firstMovie.rating === 'APT' ? 'APT (Niños)' : firstMovie.rating) : 'APT',
-                    durationMinutes: firstMovie ? firstMovie.durationMinutes : 120,
-                    genres: firstMovie ? firstMovie.genre : ['Animación', 'Familiar'],
-                    synopsis: firstMovie ? firstMovie.synopsis : '',
-                    backdropUrl: firstMovie ? (firstMovie.backdropUrl || firstMovie.posterUrl) : '',
-                    posterUrl: firstMovie ? firstMovie.posterUrl : '',
-                    active: true,
-                    order: heroSlides.length + 1,
-                    movieId: firstMovie ? firstMovie.id : ''
-                  });
-                  setHeroTmdbResults([]);
-                  setHeroTmdbSearchQuery('');
-                  setIsHeroModalOpen(true);
-                }}
-                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-amber-500/20 shrink-0"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Agregar Diapositiva al Hero</span>
-              </button>
-            </div>
-
-            {/* Hero Slides Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {heroSlides.map((slide, idx) => (
-                <div
-                  key={slide.id}
-                  className={`bg-slate-900 border rounded-2xl overflow-hidden shadow-xl transition-all ${
-                    slide.active ? 'border-slate-800 hover:border-amber-500/50' : 'border-slate-800/50 opacity-60'
-                  }`}
-                >
-                  {/* Backdrop Preview */}
-                  <div className="relative aspect-[16/8] w-full bg-slate-950 overflow-hidden">
-                    <img
-                      src={slide.backdropUrl || slide.posterUrl}
-                      alt={slide.title}
-                      className="w-full h-full object-cover filter brightness-75"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
-
-                    {/* Overlay Badges */}
-                    <div className="absolute top-3 left-3 flex flex-wrap items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] uppercase flex items-center gap-1 shadow">
-                        <Clock className="w-3 h-3" /> {slide.time}
-                      </span>
-                      <span className="px-2 py-0.5 rounded bg-slate-900/80 backdrop-blur border border-slate-700 text-amber-300 font-bold text-[10px]">
-                        {slide.tagline}
-                      </span>
-                      <span className="px-1.5 py-0.5 rounded bg-slate-950/90 text-slate-300 font-mono text-[10px]">
-                        {slide.rating}
-                      </span>
-                    </div>
-
-                    {/* Active/Inactive Status Switch */}
-                    <div className="absolute top-3 right-3">
-                      <button
-                        onClick={() => handleToggleHeroSlide(slide.id)}
-                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold flex items-center gap-1.5 shadow transition-all ${
-                          slide.active
-                            ? 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-300'
-                            : 'bg-slate-950/80 border border-slate-700 text-slate-400'
-                        }`}
-                      >
-                        {slide.active ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
-                        <span>{slide.active ? 'ACTIVO' : 'PAUSADO'}</span>
-                      </button>
-                    </div>
-
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <span className="text-[10px] font-mono text-slate-400 block">Orden #{slide.order}</span>
-                      <h3 className="text-lg font-black text-white truncate drop-shadow-md">{slide.title}</h3>
-                    </div>
-                  </div>
-
-                  {/* Body & Actions */}
-                  <div className="p-4 space-y-3">
-                    <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                      {slide.synopsis}
-                    </p>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
-                      
-                      {/* Reorder Buttons */}
-                      <div className="flex items-center gap-1">
-                        <button
-                          disabled={idx === 0}
-                          onClick={() => handleMoveSlide(idx, 'up')}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                          title="Subir posición"
-                        >
-                          <ArrowUp className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          disabled={idx === heroSlides.length - 1}
-                          onClick={() => handleMoveSlide(idx, 'down')}
-                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:pointer-events-none transition-colors"
-                          title="Bajar posición"
-                        >
-                          <ArrowDown className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-
-                      {/* Edit and Delete */}
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            setEditingHeroSlide(slide);
-                            setIsHeroModalOpen(true);
-                          }}
-                          className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors"
-                        >
-                          <Edit className="w-3 h-3 text-amber-400" />
-                          <span>Editar</span>
-                        </button>
-                        <button
-                          onClick={() => handleDeleteHeroSlide(slide.id)}
-                          className="px-3 py-1.5 bg-rose-950/50 hover:bg-rose-900/60 border border-rose-500/30 text-rose-300 text-xs font-bold rounded-xl flex items-center gap-1.5 transition-colors"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                          <span>Eliminar</span>
-                        </button>
-                      </div>
-
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {heroSlides.length === 0 && (
-              <div className="text-center py-12 bg-slate-900/40 rounded-2xl border border-dashed border-slate-800">
-                <Sparkles className="w-8 h-8 text-amber-400 mx-auto mb-2 opacity-60" />
-                <p className="text-sm text-slate-300 font-bold">No hay diapositivas en el Carrusel Hero</p>
-                <p className="text-xs text-slate-500 mt-1">Crea una diapositiva para personalizar el banner de inicio con tus horarios de función.</p>
-              </div>
-            )}
-          </div>
+          <AdminHeroTab
+            heroSlides={heroSlides}
+            onOpenCreate={handleOpenCreateHeroSlide}
+            onOpenEdit={handleOpenEditHeroSlide}
+            onToggleActive={handleToggleActiveHeroSlide}
+            onDelete={handleDeleteHeroSlide}
+            onMoveOrder={handleMoveSlideOrder}
+          />
         )}
 
-        {/* ========================================================= */}
-        {/* TAB 1: MOVIES */}
-        {/* ========================================================= */}
         {activeTab === 'movies' && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Film className="w-5 h-5 text-amber-400" />
-                  <span>Catálogo de Películas</span>
-                </h2>
-                <p className="text-xs text-slate-400">Administra los títulos de cartelera y próximos estrenos</p>
-              </div>
-
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    setIsTmdbExploreOpen(true);
-                    handleLoadExploreTmdb('now-playing');
-                  }}
-                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors shadow-md"
-                >
-                  <Globe className="w-4 h-4 text-cyan-400" />
-                  <span>Explorar en TMDB</span>
-                </button>
-
-                <button
-                  onClick={() => {
-                    setEditingMovie({
-                      title: '',
-                      originalTitle: '',
-                      synopsis: '',
-                      durationMinutes: 120,
-                      rating: 'APT',
-                      genre: ['Acción', 'Aventura'],
-                      posterUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop',
-                      backdropUrl: '',
-                      status: 'CARTELERA',
-                      director: '',
-                      trailerUrl: '',
-                    });
-                    setTmdbSearchResults([]);
-                    setTmdbSearchQuery('');
-                    setIsMovieModalOpen(true);
-                  }}
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors shadow-md shadow-amber-500/20"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Agregar Película</span>
-                </button>
-              </div>
-            </div>
-
-            {importSuccessMessage && (
-              <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>{importSuccessMessage}</span>
-              </div>
-            )}
-
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {movies.map((m) => (
-                <div key={m.id} className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex gap-3">
-                  <img
-                    src={m.posterUrl}
-                    alt={m.title}
-                    className="w-16 h-24 object-cover rounded-xl bg-slate-950 shrink-0"
-                  />
-                  <div className="min-w-0 flex-1 flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold px-1.5 py-0.5 bg-slate-800 text-amber-400 rounded">
-                          {m.rating}
-                        </span>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                          m.status === 'CARTELERA' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-cyan-500/20 text-cyan-400'
-                        }`}>
-                          {m.status}
-                        </span>
-                      </div>
-                      <h3 className="font-bold text-sm text-white truncate mt-1">{m.title}</h3>
-                      <p className="text-[10px] text-slate-400 font-mono">{m.durationMinutes} min</p>
-                    </div>
-
-                    <div className="flex gap-2 pt-2">
-                      <button
-                        onClick={() => {
-                          setEditingMovie(m);
-                          setIsMovieModalOpen(true);
-                        }}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg flex items-center gap-1 transition-colors"
-                      >
-                        <Edit className="w-3 h-3" /> Editar
-                      </button>
-                      <button
-                        onClick={() => handleDeleteMovie(m.id)}
-                        className="px-2.5 py-1 bg-rose-950/60 hover:bg-rose-900 text-rose-300 text-xs rounded-lg flex items-center gap-1 transition-colors"
-                      >
-                        <Trash2 className="w-3 h-3" /> Eliminar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <AdminMoviesTab
+            movies={movies}
+            onOpenCreate={handleOpenCreateMovie}
+            onOpenTmdbExplore={() => setIsTmdbExploreOpen(true)}
+            onOpenEdit={handleOpenEditMovie}
+            onDelete={handleDeleteMovie}
+          />
         )}
 
-        {/* ========================================================= */}
-        {/* TAB 2: SHOWTIMES */}
-        {/* ========================================================= */}
         {activeTab === 'showtimes' && (
-          <div className="space-y-4">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <Clock className="w-5 h-5 text-amber-400" />
-                  <span>Programación de Funciones</span>
-                </h2>
-                <p className="text-xs text-slate-400">Programa horarios de proyección para tus películas en cartelera</p>
-              </div>
-              <button
-                onClick={() => {
-                  if (movies.length === 0) {
-                    alert('⚠️ Para programar un horario, primero debes agregar o importar al menos una película en la pestaña de "Películas".');
-                    return;
-                  }
-                  const defaultRoom = rooms.length > 0 ? rooms[0] : { id: '', name: 'Sala Única', capacity: 25 };
-                  setNewShowtime({
-                    movieId: movies[0].id,
-                    roomId: defaultRoom.id,
-                    date: new Date().toISOString().split('T')[0],
-                    startTime: '17:30',
-                    endTime: '19:50',
-                    availableSeats: defaultRoom.capacity
-                  });
-                  setIsShowtimeModalOpen(true);
-                }}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors shadow-md shadow-amber-500/20"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Nueva Función</span>
-              </button>
-            </div>
-
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
-              <table className="w-full text-left text-xs font-sans">
-                <thead className="bg-slate-950 text-slate-400 font-mono text-[11px] border-b border-slate-800">
-                  <tr>
-                    <th className="p-3.5">Película</th>
-                    <th className="p-3.5">Sala</th>
-                    <th className="p-3.5">Fecha</th>
-                    <th className="p-3.5">Horario</th>
-                    <th className="p-3.5">Capacidad / Disponibles</th>
-                    <th className="p-3.5 text-right">Acciones</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {showtimes.map((st) => {
-                    const movie = movies.find(m => m.id === st.movieId);
-                    const room = rooms.find(r => r.id === st.roomId);
-                    return (
-                      <tr key={st.id} className="hover:bg-slate-800/40 transition-colors">
-                        <td className="p-3.5 font-bold text-white">{movie?.title || 'Desconocida'}</td>
-                        <td className="p-3.5 text-amber-400 font-semibold">{room?.name || 'Sala Única'}</td>
-                        <td className="p-3.5 font-mono text-slate-300">{st.date}</td>
-                        <td className="p-3.5 font-mono font-bold text-emerald-400 text-sm">{st.startTime}</td>
-                        <td className="p-3.5 font-mono text-slate-300">{st.availableSeats} / {room?.capacity || 25}</td>
-                        <td className="p-3.5 text-right">
-                          <button
-                            onClick={() => handleDeleteShowtime(st.id)}
-                            className="p-1.5 text-rose-400 hover:bg-rose-950/60 rounded-lg transition-colors"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <AdminShowtimesTab
+            showtimes={showtimes}
+            movies={movies}
+            rooms={rooms}
+            onOpenCreate={handleOpenCreateShowtime}
+            onDelete={handleDeleteShowtime}
+          />
         )}
 
-        {/* ========================================================= */}
-        {/* TAB 3: PRICING */}
-        {/* ========================================================= */}
         {activeTab === 'pricing' && (
-          <div className="space-y-4 max-w-3xl">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <div>
-                <h2 className="text-base font-bold text-white flex items-center gap-2">
-                  <DollarSign className="w-5 h-5 text-amber-400" />
-                  <span>Tarifas y Precios de Entrada</span>
-                </h2>
-                <p className="text-xs text-slate-400">Define los precios en Soles (S/.) para la taquilla y venta de boletos</p>
-              </div>
-
-              <div className="flex gap-2">
-                {pricing.length === 0 && (
-                  <button
-                    onClick={handleInitializeDefaultPricing}
-                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors border border-slate-700"
-                  >
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>Inicializar Tarifas Estándar</span>
-                  </button>
-                )}
-                {pricing.length > 0 && (
-                  <button
-                    onClick={handleSaveAllPricing}
-                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors shadow-md shadow-amber-500/20"
-                  >
-                    <Check className="w-4 h-4" />
-                    <span>Guardar Cambios</span>
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {pricingSavedMessage && (
-              <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-                <span>{pricingSavedMessage}</span>
-              </div>
-            )}
-
-            {pricing.length > 0 ? (
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-                {pricing.map((p, idx) => (
-                  <div key={p.type} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 bg-slate-800 text-amber-400 font-mono font-bold text-[10px] rounded">
-                          {p.type}
-                        </span>
-                        <h3 className="font-bold text-sm text-white">{p.label}</h3>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-0.5">{p.description}</p>
-                    </div>
-                    <div className="flex items-center gap-2 self-end sm:self-center">
-                      <span className="text-xs text-amber-400 font-mono font-bold">S/.</span>
-                      <input
-                        type="number"
-                        step="0.50"
-                        min="0"
-                        value={priceInputs[p.type] !== undefined ? priceInputs[p.type] : p.basePrice}
-                        onChange={(e) => handlePriceInputChange(idx, p.type, e.target.value)}
-                        onBlur={() => handlePriceInputBlur(idx, p.type)}
-                        placeholder="0.00"
-                        className="w-28 bg-slate-900 border border-slate-700 text-white font-mono font-bold text-sm px-3 py-2 rounded-xl outline-none focus:border-amber-400 text-right"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12 bg-slate-900/40 rounded-2xl border border-dashed border-slate-800 space-y-3">
-                <DollarSign className="w-8 h-8 text-amber-400 mx-auto opacity-60" />
-                <p className="text-sm text-slate-300 font-bold">No hay tarifas configuradas</p>
-                <p className="text-xs text-slate-500">Pulsa el botón superior para cargar el tarifario estándar (General, Niño, Adulto Mayor, Promo Pareja).</p>
-                <button
-                  onClick={handleInitializeDefaultPricing}
-                  className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl inline-flex items-center gap-1.5 transition-colors"
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Inicializar Tarifas Estándar</span>
-                </button>
-              </div>
-            )}
-          </div>
+          <AdminPricingTab
+            pricing={pricing}
+            priceInputs={priceInputs}
+            pricingSavedMessage={pricingSavedMessage}
+            onPriceInputChange={handlePriceInputChange}
+            onSavePrice={handleSavePrice}
+            onSaveAllPrices={handleSaveAllPrices}
+            onResetStandardPricing={handleResetStandardPricing}
+          />
         )}
 
-        {/* ========================================================= */}
-        {/* TAB 4: AUDIT & SALES */}
-        {/* ========================================================= */}
         {activeTab === 'audit' && (
-          <div className="space-y-6">
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-                <span className="text-xs text-slate-400 font-mono">INGRESOS TOTALES</span>
-                <p className="text-2xl font-black text-amber-400 font-mono mt-1">S/. {totalRevenue.toFixed(2)}</p>
-              </div>
-              <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-                <span className="text-xs text-slate-400 font-mono">BOLETOS VENDIDOS</span>
-                <p className="text-2xl font-black text-emerald-400 font-mono mt-1">{totalTicketsSold}</p>
-              </div>
-              <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl">
-                <span className="text-xs text-slate-400 font-mono">TRANSACCIONES</span>
-                <p className="text-2xl font-black text-cyan-400 font-mono mt-1">{sales.length}</p>
-              </div>
-            </div>
-
-            {/* Sales Table */}
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-lg">
-              <table className="w-full text-left text-xs font-sans">
-                <thead className="bg-slate-950 text-slate-400 font-mono text-[11px] border-b border-slate-800">
-                  <tr>
-                    <th className="p-3.5">ID Venta</th>
-                    <th className="p-3.5">Película</th>
-                    <th className="p-3.5">Boletos</th>
-                    <th className="p-3.5">Total</th>
-                    <th className="p-3.5">Cajero</th>
-                    <th className="p-3.5 text-right">Fecha / Hora</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800 font-mono">
-                  {sales.map((s) => (
-                    <tr key={s.id} className="hover:bg-slate-800/40">
-                      <td className="p-3.5 font-bold text-amber-400">{s.id}</td>
-                      <td className="p-3.5 font-sans font-semibold text-white">{s.movieTitle}</td>
-                      <td className="p-3.5 text-slate-300">{s.totalTickets}</td>
-                      <td className="p-3.5 font-bold text-emerald-400">S/. {s.totalAmount.toFixed(2)}</td>
-                      <td className="p-3.5 text-slate-400 font-sans">{s.cashierName}</td>
-                      <td className="p-3.5 text-right text-slate-400 text-[11px]">
-                        {new Date(s.createdAt).toLocaleString('es-PE')}
-                      </td>
-                    </tr>
-                  ))}
-                  {sales.length === 0 && (
-                    <tr>
-                      <td colSpan={6} className="p-6 text-center text-slate-500 italic">No hay ventas registradas aún.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <AdminAuditTab sales={sales} />
         )}
 
       </div>
 
-      {/* ========================================================= */}
-      {/* MODAL: ADD / EDIT HERO SLIDE */}
-      {/* ========================================================= */}
-      {isHeroModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-hidden">
-          <div className="bg-[#0c1017] border border-slate-700/80 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0 bg-[#0c1017]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
-                  <Sparkles className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-white font-sans">
-                    {editingHeroSlide.id ? 'Editar Diapositiva del Hero' : 'Nueva Diapositiva en Carrusel'}
-                  </h3>
-                  <p className="text-xs text-slate-400">Personaliza el banner de portada con tráiler y backdrop oficial</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsHeroModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
+      {/* Admin Modals */}
+      <HeroSlideModal
+        isOpen={isHeroModalOpen}
+        editingSlide={editingHeroSlide}
+        movies={movies}
+        onClose={() => setIsHeroModalOpen(false)}
+        onSave={handleSaveHeroSlide}
+      />
 
-            {/* Scrollable Body */}
-            <div className="p-5 space-y-4 overflow-y-auto flex-1">
-              {/* TMDB Autocomplete Search Bar for Hero Slide */}
-              <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-3.5 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                    Búsqueda en TheMovieDB (Auto-completar Banner HD y Datos)
-                  </span>
-                  <span className="text-[10px] text-slate-400">Backdrop 16:9 HD, Sinopsis</span>
-                </div>
+      <MovieModal
+        isOpen={isMovieModalOpen}
+        editingMovie={editingMovie}
+        onClose={() => setIsMovieModalOpen(false)}
+        onSave={handleSaveMovie}
+      />
 
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      value={heroTmdbSearchQuery}
-                      onChange={(e) => setHeroTmdbSearchQuery(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleSearchHeroTmdb(heroTmdbSearchQuery);
-                        }
-                      }}
-                      placeholder="Escribe el nombre de la película para el banner..."
-                      className="w-full bg-slate-900 border border-slate-700 pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 rounded-xl outline-none focus:border-amber-400"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleSearchHeroTmdb(heroTmdbSearchQuery)}
-                    disabled={isSearchingHeroTmdb || !heroTmdbSearchQuery.trim()}
-                    className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
-                  >
-                    {isSearchingHeroTmdb ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                    <span>Buscar</span>
-                  </button>
-                </div>
+      <TmdbExploreModal
+        isOpen={isTmdbExploreOpen}
+        onClose={() => setIsTmdbExploreOpen(false)}
+        onDirectImport={handleDirectImportTmdb}
+      />
 
-                {/* TMDB Dropdown Results */}
-                {heroTmdbResults.length > 0 && (
-                  <div className="max-h-44 overflow-y-auto space-y-1.5 pt-1 pr-1">
-                    {heroTmdbResults.map((t) => (
-                      <div
-                        key={t.id}
-                        onClick={() => handleSelectHeroTmdbMovie(t.id)}
-                        className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/50 rounded-xl flex items-center gap-2.5 cursor-pointer transition-colors"
-                      >
-                        <img
-                          src={t.backdropUrl || t.posterUrl}
-                          alt={t.title}
-                          className="w-14 h-8 object-cover rounded-lg bg-slate-950 shrink-0"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <h4 className="text-xs font-bold text-white truncate">{t.title}</h4>
-                            <span className="text-[10px] text-amber-400 font-bold shrink-0">⭐ {t.voteAverage.toFixed(1)}</span>
-                          </div>
-                          <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                            {t.releaseDate ? t.releaseDate.split('-')[0] : ''} • {t.overview || 'Sin descripción'}
-                          </p>
-                        </div>
-                        <span className="px-2 py-1 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded-lg shrink-0">
-                          Usar
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              <form id="heroSlideForm" onSubmit={handleSaveHeroSlide} className="space-y-3.5 text-xs">
-                
-                {/* Quick autofill from existing movies */}
-                {movies.length > 0 && (
-                  <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
-                    <label className="text-amber-400 font-bold block mb-1.5 flex items-center gap-1 font-mono text-[11px]">
-                      <Film className="w-3 h-3" /> O autorellenar desde Película de Cartelera:
-                    </label>
-                    <select
-                      value={editingHeroSlide.movieId || ''}
-                      onChange={(e) => handlePopulateFromMovie(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 text-slate-200 p-2.5 rounded-lg text-xs"
-                    >
-                      <option value="">-- Seleccionar Película para Autocompletar --</option>
-                      {movies.map(m => (
-                        <option key={m.id} value={m.id}>{m.title} ({m.rating})</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Título de la Película / Función:</label>
-                    <input
-                      type="text"
-                      required
-                      value={editingHeroSlide.title || ''}
-                      onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, title: e.target.value })}
-                      placeholder="ej. Spider-Man: Beyond the Spider-Verse"
-                      className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg outline-none focus:border-amber-400"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Hora de la Función (ej. 5:30 PM, 8:00 PM):</label>
-                    <input
-                      type="text"
-                      required
-                      value={editingHeroSlide.time || ''}
-                      onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, time: e.target.value })}
-                      placeholder="ej. 5:30 PM o 8:00 PM"
-                      className="w-full bg-slate-950 border border-slate-700 text-amber-400 font-bold p-2.5 rounded-lg font-mono outline-none focus:border-amber-400"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Etiqueta / Subtítulo Destacado:</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingHeroSlide.tagline || ''}
-                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, tagline: e.target.value })}
-                    placeholder="ej. FUNCIÓN DE LA TARDE (FAMILIAR / NIÑOS)"
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg outline-none focus:border-amber-400"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Clasificación:</label>
-                    <input
-                      type="text"
-                      value={editingHeroSlide.rating || 'APT'}
-                      onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, rating: e.target.value })}
-                      placeholder="APT, +12, +14"
-                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Duración (min):</label>
-                    <input
-                      type="number"
-                      value={editingHeroSlide.durationMinutes !== undefined ? editingHeroSlide.durationMinutes : ''}
-                      onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, durationMinutes: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
-                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Orden / Posición:</label>
-                    <input
-                      type="number"
-                      value={editingHeroSlide.order !== undefined ? editingHeroSlide.order : ''}
-                      onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, order: e.target.value === '' ? undefined : parseInt(e.target.value) || 1 })}
-                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">URL de Imagen de Fondo (Backdrop HD Horizontal):</label>
-                  <input
-                    type="url"
-                    required
-                    value={editingHeroSlide.backdropUrl || ''}
-                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, backdropUrl: e.target.value })}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg text-xs font-mono"
-                  />
-                </div>
-
-                {/* Backdrop preview thumbnail */}
-                {editingHeroSlide.backdropUrl && (
-                  <div className="relative aspect-[16/6] w-full rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
-                    <img
-                      src={editingHeroSlide.backdropUrl}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                    />
-                    <span className="absolute bottom-2 left-2 text-[10px] bg-black/70 px-2 py-0.5 rounded text-slate-300 font-mono">
-                      Vista previa de imagen
-                    </span>
-                  </div>
-                )}
-
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Sinopsis / Descripción:</label>
-                  <textarea
-                    rows={3}
-                    value={editingHeroSlide.synopsis || ''}
-                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, synopsis: e.target.value })}
-                    placeholder="Breve reseña que aparecerá en el banner principal..."
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg outline-none focus:border-amber-400"
-                  />
-                </div>
-
-                <div className="flex items-center gap-2 pt-1">
-                  <input
-                    type="checkbox"
-                    id="slideActiveCheck"
-                    checked={editingHeroSlide.active ?? true}
-                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, active: e.target.checked })}
-                    className="w-4 h-4 accent-amber-500 rounded"
-                  />
-                  <label htmlFor="slideActiveCheck" className="text-slate-200 font-semibold cursor-pointer select-none">
-                    Mostrar esta diapositiva activamente en el carrusel público
-                  </label>
-                </div>
-              </form>
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-end gap-2.5 p-4 border-t border-slate-800 shrink-0 bg-slate-950/80">
-              <button
-                type="button"
-                onClick={() => setIsHeroModalOpen(false)}
-                className="px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-slate-300 font-semibold"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                form="heroSlideForm"
-                className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-500/20"
-              >
-                Guardar Diapositiva
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* MODAL: ADD / EDIT MOVIE WITH TMDB AUTO-FILL */}
-      {/* ========================================================= */}
-      {isMovieModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-hidden">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0 bg-slate-900">
-              <div>
-                <h3 className="text-lg font-black text-white font-sans flex items-center gap-2">
-                  <Film className="w-5 h-5 text-amber-400" />
-                  <span>{editingMovie.id ? 'Editar Película' : 'Agregar Nueva Película'}</span>
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">Ingresa los datos manualmente o usa el buscador inteligente de TMDB</p>
-              </div>
-              <button
-                onClick={() => setIsMovieModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Scrollable Body */}
-            <div className="p-5 space-y-4 overflow-y-auto flex-1">
-              {/* TMDB Autocomplete Search Bar */}
-              <div className="bg-slate-950/80 border border-cyan-500/30 rounded-2xl p-3.5 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-cyan-400 flex items-center gap-1.5 uppercase tracking-wider">
-                    <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                    Búsqueda en TheMovieDB (Auto-completar 1-Clic)
-                  </span>
-                  <span className="text-[10px] text-slate-400">Póster HD, Sinopsis, Duración</span>
-                </div>
-
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                    <input
-                      type="text"
-                      value={tmdbSearchQuery}
-                      onChange={(e) => setTmdbSearchQuery(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleSearchTmdb(tmdbSearchQuery);
-                        }
-                      }}
-                      placeholder="Escribe el nombre (ej. Avatar, Gladiador, Dune...)"
-                      className="w-full bg-slate-900 border border-slate-700 pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 rounded-xl outline-none focus:border-cyan-400"
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleSearchTmdb(tmdbSearchQuery)}
-                    disabled={isSearchingTmdb || !tmdbSearchQuery.trim()}
-                    className="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
-                  >
-                    {isSearchingTmdb ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                    <span>Buscar</span>
-                  </button>
-                </div>
-
-                {/* TMDB Dropdown Results */}
-                {tmdbSearchResults.length > 0 && (
-                  <div className="max-h-48 overflow-y-auto space-y-1.5 pt-1 pr-1">
-                    {tmdbSearchResults.map((t) => (
-                      <div
-                        key={t.id}
-                        onClick={() => handleSelectTmdbMovie(t.id)}
-                        className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 rounded-xl flex items-center gap-2.5 cursor-pointer transition-colors"
-                      >
-                        <img
-                          src={t.posterUrl}
-                          alt={t.title}
-                          className="w-8 h-12 object-cover rounded-lg bg-slate-950 shrink-0"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between gap-1">
-                            <h4 className="text-xs font-bold text-white truncate">{t.title}</h4>
-                            <span className="text-[10px] text-amber-400 font-bold shrink-0">⭐ {t.voteAverage.toFixed(1)}</span>
-                          </div>
-                          <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                            {t.releaseDate ? t.releaseDate.split('-')[0] : 'Estreno'} • {t.overview || 'Sin descripción'}
-                          </p>
-                        </div>
-                        <span className="px-2 py-1 bg-cyan-500/20 text-cyan-300 text-[10px] font-bold rounded-lg shrink-0">
-                          Usar
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Form */}
-              <form id="movieForm" onSubmit={handleSaveMovie} className="space-y-3.5 text-xs">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Título:</label>
-                    <input
-                      type="text"
-                      required
-                      value={editingMovie.title || ''}
-                      onChange={(e) => setEditingMovie({ ...editingMovie, title: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Título Original (Opcional):</label>
-                    <input
-                      type="text"
-                      value={editingMovie.originalTitle || ''}
-                      onChange={(e) => setEditingMovie({ ...editingMovie, originalTitle: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Sinopsis Oficial:</label>
-                  <textarea
-                    required
-                    rows={3}
-                    value={editingMovie.synopsis || ''}
-                    onChange={(e) => setEditingMovie({ ...editingMovie, synopsis: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Duración (min):</label>
-                    <input
-                      type="number"
-                      value={editingMovie.durationMinutes !== undefined ? editingMovie.durationMinutes : ''}
-                      onChange={(e) => setEditingMovie({ ...editingMovie, durationMinutes: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
-                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-mono"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Clasificación:</label>
-                    <select
-                      value={editingMovie.rating || 'APT'}
-                      onChange={(e) => setEditingMovie({ ...editingMovie, rating: e.target.value as MovieRating })}
-                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-semibold"
-                    >
-                      <option value="APT">APT (Todo Público)</option>
-                      <option value="14+">14+</option>
-                      <option value="18+">18+</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">Estado:</label>
-                    <select
-                      value={editingMovie.status || 'CARTELERA'}
-                      onChange={(e) => setEditingMovie({ ...editingMovie, status: e.target.value as MovieStatus })}
-                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-semibold"
-                    >
-                      <option value="CARTELERA">En Cartelera</option>
-                      <option value="PROXIMAMENTE">Próximamente</option>
-                      <option value="ARCHIVADA">Archivada</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">URL de Póster (Vertical HD):</label>
-                    <input
-                      type="url"
-                      value={editingMovie.posterUrl || ''}
-                      onChange={(e) => setEditingMovie({ ...editingMovie, posterUrl: e.target.value })}
-                      placeholder="https://image.tmdb.org/..."
-                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-xs font-mono"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-slate-300 font-semibold block mb-1">URL de Fondo (Backdrop HD):</label>
-                    <input
-                      type="url"
-                      value={editingMovie.backdropUrl || ''}
-                      onChange={(e) => setEditingMovie({ ...editingMovie, backdropUrl: e.target.value })}
-                      placeholder="https://image.tmdb.org/..."
-                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-xs font-mono"
-                    />
-                  </div>
-                </div>
-              </form>
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-end gap-2.5 p-4 border-t border-slate-800 shrink-0 bg-slate-950/80">
-              <button
-                type="button"
-                onClick={() => setIsMovieModalOpen(false)}
-                className="px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-slate-300 font-semibold"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                form="movieForm"
-                className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-500/20"
-              >
-                Guardar Película
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* ========================================================= */}
-      {/* MODAL: TMDB WORLDWIDE EXPLORER & 1-CLICK IMPORT */}
-      {/* ========================================================= */}
-      {isTmdbExploreOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-hidden">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0 bg-slate-900">
-              <div>
-                <h3 className="text-lg font-black text-white font-sans flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-cyan-400" />
-                  <span>Explorador de Estrenos y Cartelera Mundial (TMDB)</span>
-                </h3>
-                <p className="text-xs text-slate-400 mt-0.5">Explora títulos mundiales e impórtalos a Cines Argón con 1 solo clic</p>
-              </div>
-              <button
-                onClick={() => setIsTmdbExploreOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            {/* Scrollable Body */}
-            <div className="p-5 space-y-4 overflow-y-auto flex-1">
-              {/* Tabs: En Cartelera vs Populares */}
-              <div className="flex gap-2 border-b border-slate-800 pb-3">
-                <button
-                  onClick={() => handleLoadExploreTmdb('now-playing')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                    tmdbExploreTab === 'now-playing'
-                      ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                      : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  <Play className="w-3.5 h-3.5" />
-                  <span>En Cartelera Mundial (Now Playing)</span>
-                </button>
-
-                <button
-                  onClick={() => handleLoadExploreTmdb('popular')}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
-                    tmdbExploreTab === 'popular'
-                      ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
-                      : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>Populares & Taquilleras</span>
-                </button>
-              </div>
-
-              {/* Grid or Loader */}
-              {isLoadingExplore ? (
-                <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-400">
-                  <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
-                  <p className="text-xs font-medium">Consultando API oficial de TheMovieDB...</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                  {tmdbExploreList.map((movie) => (
-                    <div
-                      key={movie.id}
-                      className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between gap-3 hover:border-slate-700 transition-all group"
-                    >
-                      <div className="flex gap-3">
-                        <img
-                          src={movie.posterUrl}
-                          alt={movie.title}
-                          className="w-16 h-24 object-cover rounded-xl bg-slate-900 shrink-0 group-hover:scale-105 transition-transform"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] text-amber-400 font-bold">⭐ {movie.voteAverage.toFixed(1)}</span>
-                            <span className="text-[10px] text-slate-500">{movie.releaseDate ? movie.releaseDate.split('-')[0] : ''}</span>
-                          </div>
-                          <h4 className="text-xs font-bold text-white mt-1 line-clamp-2">{movie.title}</h4>
-                          <p className="text-[10px] text-slate-400 mt-1 line-clamp-3 leading-relaxed">
-                            {movie.overview || 'Sin descripción disponible.'}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-1.5 pt-1 border-t border-slate-900">
-                        <button
-                          onClick={() => handleDirectImportTmdb(movie.id, 'CARTELERA')}
-                          className="flex-1 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] rounded-lg flex items-center justify-center gap-1 shadow-md"
-                        >
-                          <Download className="w-3 h-3" />
-                          <span>A Cartelera</span>
-                        </button>
-                        <button
-                          onClick={() => handleDirectImportTmdb(movie.id, 'PROXIMAMENTE')}
-                          className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] rounded-lg"
-                        >
-                          Próximamente
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex justify-end p-4 border-t border-slate-800 shrink-0 bg-slate-950/80">
-              <button
-                type="button"
-                onClick={() => setIsTmdbExploreOpen(false)}
-                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-200 text-xs font-bold"
-              >
-                Cerrar Explorador
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-
-      {/* ========================================================= */}
-      {/* MODAL: ADD SHOWTIME */}
-      {/* ========================================================= */}
-      {isShowtimeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-hidden">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
-            
-            {/* Header */}
-            <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0 bg-slate-900">
-              <h3 className="text-base font-bold text-white font-sans flex items-center gap-2">
-                <Clock className="w-5 h-5 text-amber-400" />
-                <span>Programar Nueva Función</span>
-              </h3>
-              <button
-                onClick={() => setIsShowtimeModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-            
-            {/* Form */}
-            <form id="showtimeForm" onSubmit={handleSaveShowtime} className="p-5 space-y-3.5 text-xs overflow-y-auto flex-1">
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">Película:</label>
-                <select
-                  value={newShowtime.movieId}
-                  onChange={(e) => setNewShowtime({ ...newShowtime, movieId: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
-                >
-                  {movies.map(m => (
-                    <option key={m.id} value={m.id}>{m.title}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">Sala:</label>
-                <select
-                  value={newShowtime.roomId}
-                  onChange={(e) => setNewShowtime({ ...newShowtime, roomId: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
-                >
-                  {rooms.map(r => (
-                    <option key={r.id} value={r.id}>{r.name} ({r.type})</option>
-                  ))}
-                  {rooms.length === 0 && (
-                    <option value="">Sala Única - Home Cinema (VIP Premium)</option>
-                  )}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Fecha:</label>
-                  <input
-                    type="date"
-                    value={newShowtime.date}
-                    onChange={(e) => setNewShowtime({ ...newShowtime, date: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl font-mono outline-none focus:border-amber-400"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Hora Inicio:</label>
-                  <input
-                    type="time"
-                    value={newShowtime.startTime}
-                    onChange={(e) => setNewShowtime({ ...newShowtime, startTime: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl font-mono outline-none focus:border-amber-400"
-                  />
-                </div>
-              </div>
-            </form>
-
-            {/* Footer */}
-            <div className="flex justify-end gap-2 p-4 border-t border-slate-800 shrink-0 bg-slate-950/80">
-              <button
-                type="button"
-                onClick={() => setIsShowtimeModalOpen(false)}
-                className="px-4 py-2 border border-slate-700 rounded-xl text-slate-300 font-semibold hover:bg-slate-800"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                form="showtimeForm"
-                className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold shadow-md shadow-amber-500/20"
-              >
-                Programar Función
-              </button>
-            </div>
-
-          </div>
-        </div>
-      )}
+      <ShowtimeModal
+        isOpen={isShowtimeModalOpen}
+        movies={movies}
+        rooms={rooms}
+        onClose={() => setIsShowtimeModalOpen(false)}
+        onSave={handleSaveShowtime}
+      />
 
     </div>
   );

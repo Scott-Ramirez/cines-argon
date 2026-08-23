@@ -8,6 +8,7 @@ import { BillboardView } from './views/BillboardView';
 import { PosView } from './views/PosView';
 import { ValidatorView } from './views/ValidatorView';
 import { AdminView } from './views/AdminView';
+import { FloatingWhatsAppButton } from './components/common/FloatingWhatsAppButton';
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -58,7 +59,7 @@ export function App() {
   const isViewingPublicPortal = !currentUser || staffTab === 'public_preview';
 
   return (
-    <div className="min-h-screen bg-[#07090e] text-slate-100 font-sans selection:bg-amber-500 selection:text-black">
+    <div className="min-h-screen bg-[#07090e] text-slate-100 font-sans selection:bg-amber-500 selection:text-black relative">
       
       {/* 1. PUBLIC PORTAL NAVBAR (for general clients/lobby) */}
       {isViewingPublicPortal && (
@@ -80,9 +81,12 @@ export function App() {
         />
       )}
 
+      {/* Floating WhatsApp Contact Button for Public Portal */}
+      {isViewingPublicPortal && <FloatingWhatsAppButton />}
+
       {/* Floating back button when logged in and previewing public billboard */}
       {currentUser && isViewingPublicPortal && (
-        <div className="fixed bottom-6 right-6 z-40 no-print animate-bounce">
+        <div className="fixed bottom-6 left-6 z-40 no-print animate-bounce">
           <button
             onClick={() => {
               if (currentUser.role === 'PORTER') setStaffTab('validator');
@@ -91,8 +95,8 @@ export function App() {
             }}
             className="px-5 py-3 rounded-2xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs shadow-2xl shadow-amber-500/40 flex items-center gap-2 border-2 border-slate-950 transition-all transform hover:scale-105"
           >
+            <span>←</span>
             <span>VOLVER A MI PANEL ({currentUser.role})</span>
-            <span>→</span>
           </button>
         </div>
       )}

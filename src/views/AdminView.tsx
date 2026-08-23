@@ -572,20 +572,23 @@ export const AdminView: React.FC = () => {
 
               <button
                 onClick={() => {
+                  const firstMovie = movies.length > 0 ? movies[0] : null;
                   setEditingHeroSlide({
-                    title: '',
-                    tagline: 'FUNCIÓN DE LA TARDE (FAMILIAR)',
-                    time: '5:30 PM',
-                    rating: 'APT',
-                    durationMinutes: 120,
-                    genres: ['Animación', 'Familiar'],
-                    synopsis: '',
-                    backdropUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1600&auto=format&fit=crop',
-                    posterUrl: '',
+                    title: firstMovie ? firstMovie.title : '',
+                    tagline: firstMovie ? (firstMovie.rating === 'APT' ? 'FUNCIÓN DE LA TARDE (FAMILIAR / NIÑOS)' : 'ESTRENO ESTELAR (+12 / ADULTOS)') : 'ESTRENO DESTACADO',
+                    time: firstMovie ? (firstMovie.rating === 'APT' ? '5:30 PM' : '8:00 PM') : '5:30 PM',
+                    rating: firstMovie ? (firstMovie.rating === 'APT' ? 'APT (Niños)' : firstMovie.rating) : 'APT',
+                    durationMinutes: firstMovie ? firstMovie.durationMinutes : 120,
+                    genres: firstMovie ? firstMovie.genre : ['Animación', 'Familiar'],
+                    synopsis: firstMovie ? firstMovie.synopsis : '',
+                    backdropUrl: firstMovie ? (firstMovie.backdropUrl || firstMovie.posterUrl) : '',
+                    posterUrl: firstMovie ? firstMovie.posterUrl : '',
                     active: true,
                     order: heroSlides.length + 1,
-                    movieId: movies[0]?.id || ''
+                    movieId: firstMovie ? firstMovie.id : ''
                   });
+                  setHeroTmdbResults([]);
+                  setHeroTmdbSearchQuery('');
                   setIsHeroModalOpen(true);
                 }}
                 className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-amber-500/20 shrink-0"
@@ -1051,9 +1054,11 @@ export const AdminView: React.FC = () => {
       {/* MODAL: ADD / EDIT HERO SLIDE */}
       {/* ========================================================= */}
       {isHeroModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-[#0c1017] border border-slate-700/80 rounded-3xl max-w-xl w-full p-6 sm:p-7 space-y-4 my-8 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-hidden">
+          <div className="bg-[#0c1017] border border-slate-700/80 rounded-3xl max-w-2xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
+            
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0 bg-[#0c1017]">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
                   <Sparkles className="w-4 h-4" />
@@ -1073,233 +1078,239 @@ export const AdminView: React.FC = () => {
               </button>
             </div>
 
-            {/* TMDB Autocomplete Search Bar for Hero Slide */}
-            <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-3.5 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                  Búsqueda en TheMovieDB (Auto-completar Banner HD y Datos)
-                </span>
-                <span className="text-[10px] text-slate-400">Backdrop 16:9 HD, Sinopsis</span>
-              </div>
-
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={heroTmdbSearchQuery}
-                    onChange={(e) => setHeroTmdbSearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleSearchHeroTmdb(heroTmdbSearchQuery);
-                      }
-                    }}
-                    placeholder="Escribe el nombre de la película para el banner..."
-                    className="w-full bg-slate-900 border border-slate-700 pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 rounded-xl outline-none focus:border-amber-400"
-                  />
+            {/* Scrollable Body */}
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              {/* TMDB Autocomplete Search Bar for Hero Slide */}
+              <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                    Búsqueda en TheMovieDB (Auto-completar Banner HD y Datos)
+                  </span>
+                  <span className="text-[10px] text-slate-400">Backdrop 16:9 HD, Sinopsis</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleSearchHeroTmdb(heroTmdbSearchQuery)}
-                  disabled={isSearchingHeroTmdb || !heroTmdbSearchQuery.trim()}
-                  className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
-                >
-                  {isSearchingHeroTmdb ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                  <span>Buscar</span>
-                </button>
-              </div>
 
-              {/* TMDB Dropdown Results */}
-              {heroTmdbResults.length > 0 && (
-                <div className="max-h-44 overflow-y-auto space-y-1.5 pt-1 pr-1">
-                  {heroTmdbResults.map((t) => (
-                    <div
-                      key={t.id}
-                      onClick={() => handleSelectHeroTmdbMovie(t.id)}
-                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/50 rounded-xl flex items-center gap-2.5 cursor-pointer transition-colors"
-                    >
-                      <img
-                        src={t.backdropUrl || t.posterUrl}
-                        alt={t.title}
-                        className="w-14 h-8 object-cover rounded-lg bg-slate-950 shrink-0"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <h4 className="text-xs font-bold text-white truncate">{t.title}</h4>
-                          <span className="text-[10px] text-amber-400 font-bold shrink-0">⭐ {t.voteAverage.toFixed(1)}</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                          {t.releaseDate ? t.releaseDate.split('-')[0] : ''} • {t.overview || 'Sin descripción'}
-                        </p>
-                      </div>
-                      <span className="px-2 py-1 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded-lg shrink-0">
-                        Usar
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-            
-            <form onSubmit={handleSaveHeroSlide} className="space-y-3.5 text-xs">
-              
-              {/* Quick autofill from existing movies */}
-              {movies.length > 0 && (
-                <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
-                  <label className="text-amber-400 font-bold block mb-1.5 flex items-center gap-1 font-mono text-[11px]">
-                    <Film className="w-3 h-3" /> O autorellenar desde Película de Cartelera:
-                  </label>
-                  <select
-                    value={editingHeroSlide.movieId || ''}
-                    onChange={(e) => handlePopulateFromMovie(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 text-slate-200 p-2 rounded-lg text-xs"
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={heroTmdbSearchQuery}
+                      onChange={(e) => setHeroTmdbSearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSearchHeroTmdb(heroTmdbSearchQuery);
+                        }
+                      }}
+                      placeholder="Escribe el nombre de la película para el banner..."
+                      className="w-full bg-slate-900 border border-slate-700 pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 rounded-xl outline-none focus:border-amber-400"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSearchHeroTmdb(heroTmdbSearchQuery)}
+                    disabled={isSearchingHeroTmdb || !heroTmdbSearchQuery.trim()}
+                    className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
                   >
-                    <option value="">-- Seleccionar Película para Autocompletar --</option>
-                    {movies.map(m => (
-                      <option key={m.id} value={m.id}>{m.title} ({m.rating})</option>
-                    ))}
-                  </select>
+                    {isSearchingHeroTmdb ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                    <span>Buscar</span>
+                  </button>
                 </div>
-              )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* TMDB Dropdown Results */}
+                {heroTmdbResults.length > 0 && (
+                  <div className="max-h-44 overflow-y-auto space-y-1.5 pt-1 pr-1">
+                    {heroTmdbResults.map((t) => (
+                      <div
+                        key={t.id}
+                        onClick={() => handleSelectHeroTmdbMovie(t.id)}
+                        className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/50 rounded-xl flex items-center gap-2.5 cursor-pointer transition-colors"
+                      >
+                        <img
+                          src={t.backdropUrl || t.posterUrl}
+                          alt={t.title}
+                          className="w-14 h-8 object-cover rounded-lg bg-slate-950 shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <h4 className="text-xs font-bold text-white truncate">{t.title}</h4>
+                            <span className="text-[10px] text-amber-400 font-bold shrink-0">⭐ {t.voteAverage.toFixed(1)}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                            {t.releaseDate ? t.releaseDate.split('-')[0] : ''} • {t.overview || 'Sin descripción'}
+                          </p>
+                        </div>
+                        <span className="px-2 py-1 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded-lg shrink-0">
+                          Usar
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <form id="heroSlideForm" onSubmit={handleSaveHeroSlide} className="space-y-3.5 text-xs">
+                
+                {/* Quick autofill from existing movies */}
+                {movies.length > 0 && (
+                  <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
+                    <label className="text-amber-400 font-bold block mb-1.5 flex items-center gap-1 font-mono text-[11px]">
+                      <Film className="w-3 h-3" /> O autorellenar desde Película de Cartelera:
+                    </label>
+                    <select
+                      value={editingHeroSlide.movieId || ''}
+                      onChange={(e) => handlePopulateFromMovie(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 text-slate-200 p-2.5 rounded-lg text-xs"
+                    >
+                      <option value="">-- Seleccionar Película para Autocompletar --</option>
+                      {movies.map(m => (
+                        <option key={m.id} value={m.id}>{m.title} ({m.rating})</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Título de la Película / Función:</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingHeroSlide.title || ''}
+                      onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, title: e.target.value })}
+                      placeholder="ej. Spider-Man: Beyond the Spider-Verse"
+                      className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg outline-none focus:border-amber-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Hora de la Función (ej. 5:30 PM, 8:00 PM):</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingHeroSlide.time || ''}
+                      onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, time: e.target.value })}
+                      placeholder="ej. 5:30 PM o 8:00 PM"
+                      className="w-full bg-slate-950 border border-slate-700 text-amber-400 font-bold p-2.5 rounded-lg font-mono outline-none focus:border-amber-400"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Título de la Película / Función:</label>
+                  <label className="text-slate-300 font-semibold block mb-1">Etiqueta / Subtítulo Destacado:</label>
                   <input
                     type="text"
                     required
-                    value={editingHeroSlide.title || ''}
-                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, title: e.target.value })}
-                    placeholder="ej. Spider-Man: Beyond the Spider-Verse"
+                    value={editingHeroSlide.tagline || ''}
+                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, tagline: e.target.value })}
+                    placeholder="ej. FUNCIÓN DE LA TARDE (FAMILIAR / NIÑOS)"
                     className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg outline-none focus:border-amber-400"
                   />
                 </div>
 
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Clasificación:</label>
+                    <input
+                      type="text"
+                      value={editingHeroSlide.rating || 'APT'}
+                      onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, rating: e.target.value })}
+                      placeholder="APT, +12, +14"
+                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Duración (min):</label>
+                    <input
+                      type="number"
+                      value={editingHeroSlide.durationMinutes !== undefined ? editingHeroSlide.durationMinutes : ''}
+                      onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, durationMinutes: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
+                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Orden / Posición:</label>
+                    <input
+                      type="number"
+                      value={editingHeroSlide.order !== undefined ? editingHeroSlide.order : ''}
+                      onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, order: e.target.value === '' ? undefined : parseInt(e.target.value) || 1 })}
+                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Hora de la Función (ej. 5:30 PM, 8:00 PM):</label>
+                  <label className="text-slate-300 font-semibold block mb-1">URL de Imagen de Fondo (Backdrop HD Horizontal):</label>
                   <input
-                    type="text"
+                    type="url"
                     required
-                    value={editingHeroSlide.time || ''}
-                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, time: e.target.value })}
-                    placeholder="ej. 5:30 PM o 8:00 PM"
-                    className="w-full bg-slate-950 border border-slate-700 text-amber-400 font-bold p-2.5 rounded-lg font-mono outline-none focus:border-amber-400"
+                    value={editingHeroSlide.backdropUrl || ''}
+                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, backdropUrl: e.target.value })}
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg text-xs font-mono"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">Etiqueta / Subtítulo Destacado:</label>
-                <input
-                  type="text"
-                  required
-                  value={editingHeroSlide.tagline || ''}
-                  onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, tagline: e.target.value })}
-                  placeholder="ej. FUNCIÓN DE LA TARDE (FAMILIAR / NIÑOS)"
-                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg outline-none focus:border-amber-400"
-                />
-              </div>
+                {/* Backdrop preview thumbnail */}
+                {editingHeroSlide.backdropUrl && (
+                  <div className="relative aspect-[16/6] w-full rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
+                    <img
+                      src={editingHeroSlide.backdropUrl}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                    />
+                    <span className="absolute bottom-2 left-2 text-[10px] bg-black/70 px-2 py-0.5 rounded text-slate-300 font-mono">
+                      Vista previa de imagen
+                    </span>
+                  </div>
+                )}
 
-              <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Clasificación:</label>
+                  <label className="text-slate-300 font-semibold block mb-1">Sinopsis / Descripción:</label>
+                  <textarea
+                    rows={3}
+                    value={editingHeroSlide.synopsis || ''}
+                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, synopsis: e.target.value })}
+                    placeholder="Breve reseña que aparecerá en el banner principal..."
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
                   <input
-                    type="text"
-                    value={editingHeroSlide.rating || 'APT'}
-                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, rating: e.target.value })}
-                    placeholder="APT, +12, +14"
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
+                    type="checkbox"
+                    id="slideActiveCheck"
+                    checked={editingHeroSlide.active ?? true}
+                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, active: e.target.checked })}
+                    className="w-4 h-4 accent-amber-500 rounded"
                   />
+                  <label htmlFor="slideActiveCheck" className="text-slate-200 font-semibold cursor-pointer select-none">
+                    Mostrar esta diapositiva activamente en el carrusel público
+                  </label>
                 </div>
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Duración (min):</label>
-                  <input
-                    type="number"
-                    value={editingHeroSlide.durationMinutes !== undefined ? editingHeroSlide.durationMinutes : ''}
-                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, durationMinutes: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Orden / Posición:</label>
-                  <input
-                    type="number"
-                    value={editingHeroSlide.order !== undefined ? editingHeroSlide.order : ''}
-                    onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, order: e.target.value === '' ? undefined : parseInt(e.target.value) || 1 })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
-                  />
-                </div>
-              </div>
+              </form>
+            </div>
 
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">URL de Imagen de Fondo (Backdrop HD Horizontal):</label>
-                <input
-                  type="url"
-                  required
-                  value={editingHeroSlide.backdropUrl || ''}
-                  onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, backdropUrl: e.target.value })}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg text-xs font-mono"
-                />
-              </div>
+            {/* Footer */}
+            <div className="flex justify-end gap-2.5 p-4 border-t border-slate-800 shrink-0 bg-slate-950/80">
+              <button
+                type="button"
+                onClick={() => setIsHeroModalOpen(false)}
+                className="px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-slate-300 font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                form="heroSlideForm"
+                className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-500/20"
+              >
+                Guardar Diapositiva
+              </button>
+            </div>
 
-              {/* Backdrop preview thumbnail */}
-              {editingHeroSlide.backdropUrl && (
-                <div className="relative aspect-[16/6] w-full rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
-                  <img
-                    src={editingHeroSlide.backdropUrl}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                    onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
-                  />
-                  <span className="absolute bottom-2 left-2 text-[10px] bg-black/70 px-2 py-0.5 rounded text-slate-300 font-mono">
-                    Vista previa de imagen
-                  </span>
-                </div>
-              )}
-
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">Sinopsis / Descripción:</label>
-                <textarea
-                  rows={3}
-                  value={editingHeroSlide.synopsis || ''}
-                  onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, synopsis: e.target.value })}
-                  placeholder="Breve reseña que aparecerá en el banner principal..."
-                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg outline-none focus:border-amber-400"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 pt-1">
-                <input
-                  type="checkbox"
-                  id="slideActiveCheck"
-                  checked={editingHeroSlide.active ?? true}
-                  onChange={(e) => setEditingHeroSlide({ ...editingHeroSlide, active: e.target.checked })}
-                  className="w-4 h-4 accent-amber-500 rounded"
-                />
-                <label htmlFor="slideActiveCheck" className="text-slate-200 font-semibold cursor-pointer select-none">
-                  Mostrar esta diapositiva activamente en el carrusel público
-                </label>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsHeroModalOpen(false)}
-                  className="px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-slate-300 font-semibold"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-500/20"
-                >
-                  Guardar Diapositiva
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
@@ -1308,10 +1319,11 @@ export const AdminView: React.FC = () => {
       {/* MODAL: ADD / EDIT MOVIE WITH TMDB AUTO-FILL */}
       {/* ========================================================= */}
       {isMovieModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-xl w-full p-6 sm:p-7 space-y-5 shadow-2xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-hidden">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
             
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0 bg-slate-900">
               <div>
                 <h3 className="text-lg font-black text-white font-sans flex items-center gap-2">
                   <Film className="w-5 h-5 text-amber-400" />
@@ -1327,188 +1339,194 @@ export const AdminView: React.FC = () => {
               </button>
             </div>
 
-            {/* TMDB Autocomplete Search Bar */}
-            <div className="bg-slate-950/80 border border-cyan-500/30 rounded-2xl p-3.5 space-y-2.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[11px] font-bold text-cyan-400 flex items-center gap-1.5 uppercase tracking-wider">
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
-                  Búsqueda en TheMovieDB (Auto-completar 1-Clic)
-                </span>
-                <span className="text-[10px] text-slate-400">Póster HD, Sinopsis, Duración</span>
+            {/* Scrollable Body */}
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              {/* TMDB Autocomplete Search Bar */}
+              <div className="bg-slate-950/80 border border-cyan-500/30 rounded-2xl p-3.5 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-cyan-400 flex items-center gap-1.5 uppercase tracking-wider">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                    Búsqueda en TheMovieDB (Auto-completar 1-Clic)
+                  </span>
+                  <span className="text-[10px] text-slate-400">Póster HD, Sinopsis, Duración</span>
+                </div>
+
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={tmdbSearchQuery}
+                      onChange={(e) => setTmdbSearchQuery(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSearchTmdb(tmdbSearchQuery);
+                        }
+                      }}
+                      placeholder="Escribe el nombre (ej. Avatar, Gladiador, Dune...)"
+                      className="w-full bg-slate-900 border border-slate-700 pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 rounded-xl outline-none focus:border-cyan-400"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleSearchTmdb(tmdbSearchQuery)}
+                    disabled={isSearchingTmdb || !tmdbSearchQuery.trim()}
+                    className="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
+                  >
+                    {isSearchingTmdb ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                    <span>Buscar</span>
+                  </button>
+                </div>
+
+                {/* TMDB Dropdown Results */}
+                {tmdbSearchResults.length > 0 && (
+                  <div className="max-h-48 overflow-y-auto space-y-1.5 pt-1 pr-1">
+                    {tmdbSearchResults.map((t) => (
+                      <div
+                        key={t.id}
+                        onClick={() => handleSelectTmdbMovie(t.id)}
+                        className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 rounded-xl flex items-center gap-2.5 cursor-pointer transition-colors"
+                      >
+                        <img
+                          src={t.posterUrl}
+                          alt={t.title}
+                          className="w-8 h-12 object-cover rounded-lg bg-slate-950 shrink-0"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-1">
+                            <h4 className="text-xs font-bold text-white truncate">{t.title}</h4>
+                            <span className="text-[10px] text-amber-400 font-bold shrink-0">⭐ {t.voteAverage.toFixed(1)}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                            {t.releaseDate ? t.releaseDate.split('-')[0] : 'Estreno'} • {t.overview || 'Sin descripción'}
+                          </p>
+                        </div>
+                        <span className="px-2 py-1 bg-cyan-500/20 text-cyan-300 text-[10px] font-bold rounded-lg shrink-0">
+                          Usar
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="text"
-                    value={tmdbSearchQuery}
-                    onChange={(e) => setTmdbSearchQuery(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleSearchTmdb(tmdbSearchQuery);
-                      }
-                    }}
-                    placeholder="Escribe el nombre (ej. Avatar, Gladiador, Dune...)"
-                    className="w-full bg-slate-900 border border-slate-700 pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 rounded-xl outline-none focus:border-cyan-400"
+              {/* Form */}
+              <form id="movieForm" onSubmit={handleSaveMovie} className="space-y-3.5 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Título:</label>
+                    <input
+                      type="text"
+                      required
+                      value={editingMovie.title || ''}
+                      onChange={(e) => setEditingMovie({ ...editingMovie, title: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Título Original (Opcional):</label>
+                    <input
+                      type="text"
+                      value={editingMovie.originalTitle || ''}
+                      onChange={(e) => setEditingMovie({ ...editingMovie, originalTitle: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-1">Sinopsis Oficial:</label>
+                  <textarea
+                    required
+                    rows={3}
+                    value={editingMovie.synopsis || ''}
+                    onChange={(e) => setEditingMovie({ ...editingMovie, synopsis: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
                   />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => handleSearchTmdb(tmdbSearchQuery)}
-                  disabled={isSearchingTmdb || !tmdbSearchQuery.trim()}
-                  className="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
-                >
-                  {isSearchingTmdb ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                  <span>Buscar</span>
-                </button>
-              </div>
 
-              {/* TMDB Dropdown Results */}
-              {tmdbSearchResults.length > 0 && (
-                <div className="max-h-48 overflow-y-auto space-y-1.5 pt-1 pr-1">
-                  {tmdbSearchResults.map((t) => (
-                    <div
-                      key={t.id}
-                      onClick={() => handleSelectTmdbMovie(t.id)}
-                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 rounded-xl flex items-center gap-2.5 cursor-pointer transition-colors"
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Duración (min):</label>
+                    <input
+                      type="number"
+                      value={editingMovie.durationMinutes !== undefined ? editingMovie.durationMinutes : ''}
+                      onChange={(e) => setEditingMovie({ ...editingMovie, durationMinutes: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
+                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Clasificación:</label>
+                    <select
+                      value={editingMovie.rating || 'APT'}
+                      onChange={(e) => setEditingMovie({ ...editingMovie, rating: e.target.value as MovieRating })}
+                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-semibold"
                     >
-                      <img
-                        src={t.posterUrl}
-                        alt={t.title}
-                        className="w-8 h-12 object-cover rounded-lg bg-slate-950 shrink-0"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-1">
-                          <h4 className="text-xs font-bold text-white truncate">{t.title}</h4>
-                          <span className="text-[10px] text-amber-400 font-bold shrink-0">⭐ {t.voteAverage.toFixed(1)}</span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
-                          {t.releaseDate ? t.releaseDate.split('-')[0] : 'Estreno'} • {t.overview || 'Sin descripción'}
-                        </p>
-                      </div>
-                      <span className="px-2 py-1 bg-cyan-500/20 text-cyan-300 text-[10px] font-bold rounded-lg shrink-0">
-                        Usar
-                      </span>
-                    </div>
-                  ))}
+                      <option value="APT">APT (Todo Público)</option>
+                      <option value="14+">14+</option>
+                      <option value="18+">18+</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">Estado:</label>
+                    <select
+                      value={editingMovie.status || 'CARTELERA'}
+                      onChange={(e) => setEditingMovie({ ...editingMovie, status: e.target.value as MovieStatus })}
+                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-semibold"
+                    >
+                      <option value="CARTELERA">En Cartelera</option>
+                      <option value="PROXIMAMENTE">Próximamente</option>
+                      <option value="ARCHIVADA">Archivada</option>
+                    </select>
+                  </div>
                 </div>
-              )}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">URL de Póster (Vertical HD):</label>
+                    <input
+                      type="url"
+                      value={editingMovie.posterUrl || ''}
+                      onChange={(e) => setEditingMovie({ ...editingMovie, posterUrl: e.target.value })}
+                      placeholder="https://image.tmdb.org/..."
+                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-xs font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-300 font-semibold block mb-1">URL de Fondo (Backdrop HD):</label>
+                    <input
+                      type="url"
+                      value={editingMovie.backdropUrl || ''}
+                      onChange={(e) => setEditingMovie({ ...editingMovie, backdropUrl: e.target.value })}
+                      placeholder="https://image.tmdb.org/..."
+                      className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-xs font-mono"
+                    />
+                  </div>
+                </div>
+              </form>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSaveMovie} className="space-y-3.5 text-xs">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Título:</label>
-                  <input
-                    type="text"
-                    required
-                    value={editingMovie.title || ''}
-                    onChange={(e) => setEditingMovie({ ...editingMovie, title: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
-                  />
-                </div>
+            {/* Footer */}
+            <div className="flex justify-end gap-2.5 p-4 border-t border-slate-800 shrink-0 bg-slate-950/80">
+              <button
+                type="button"
+                onClick={() => setIsMovieModalOpen(false)}
+                className="px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-slate-300 font-semibold"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                form="movieForm"
+                className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-500/20"
+              >
+                Guardar Película
+              </button>
+            </div>
 
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Título Original (Opcional):</label>
-                  <input
-                    type="text"
-                    value={editingMovie.originalTitle || ''}
-                    onChange={(e) => setEditingMovie({ ...editingMovie, originalTitle: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">Sinopsis Oficial:</label>
-                <textarea
-                  required
-                  rows={3}
-                  value={editingMovie.synopsis || ''}
-                  onChange={(e) => setEditingMovie({ ...editingMovie, synopsis: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Duración (min):</label>
-                  <input
-                    type="number"
-                    value={editingMovie.durationMinutes !== undefined ? editingMovie.durationMinutes : ''}
-                    onChange={(e) => setEditingMovie({ ...editingMovie, durationMinutes: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Clasificación:</label>
-                  <select
-                    value={editingMovie.rating || 'APT'}
-                    onChange={(e) => setEditingMovie({ ...editingMovie, rating: e.target.value as MovieRating })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-semibold"
-                  >
-                    <option value="APT">APT (Todo Público)</option>
-                    <option value="14+">14+</option>
-                    <option value="18+">18+</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Estado:</label>
-                  <select
-                    value={editingMovie.status || 'CARTELERA'}
-                    onChange={(e) => setEditingMovie({ ...editingMovie, status: e.target.value as MovieStatus })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-semibold"
-                  >
-                    <option value="CARTELERA">En Cartelera</option>
-                    <option value="PROXIMAMENTE">Próximamente</option>
-                    <option value="ARCHIVADA">Archivada</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">URL de Póster (Vertical HD):</label>
-                  <input
-                    type="url"
-                    value={editingMovie.posterUrl || ''}
-                    onChange={(e) => setEditingMovie({ ...editingMovie, posterUrl: e.target.value })}
-                    placeholder="https://image.tmdb.org/..."
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-xs font-mono"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">URL de Fondo (Backdrop HD):</label>
-                  <input
-                    type="url"
-                    value={editingMovie.backdropUrl || ''}
-                    onChange={(e) => setEditingMovie({ ...editingMovie, backdropUrl: e.target.value })}
-                    placeholder="https://image.tmdb.org/..."
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-xs font-mono"
-                  />
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsMovieModalOpen(false)}
-                  className="px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-slate-300 font-semibold"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-500/20"
-                >
-                  Guardar Película
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
@@ -1517,10 +1535,11 @@ export const AdminView: React.FC = () => {
       {/* MODAL: TMDB WORLDWIDE EXPLORER & 1-CLICK IMPORT */}
       {/* ========================================================= */}
       {isTmdbExploreOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-4xl w-full p-6 sm:p-7 space-y-5 shadow-2xl my-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-hidden">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-4xl w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
             
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0 bg-slate-900">
               <div>
                 <h3 className="text-lg font-black text-white font-sans flex items-center gap-2">
                   <Globe className="w-5 h-5 text-cyan-400" />
@@ -1536,80 +1555,97 @@ export const AdminView: React.FC = () => {
               </button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex gap-2 border-b border-slate-800 pb-3">
-              <button
-                onClick={() => handleLoadExploreTmdb('now-playing')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
-                  tmdbExploreTab === 'now-playing'
-                    ? 'bg-cyan-500 text-slate-950'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                🍿 En Cines / Cartelera Actual
-              </button>
-              <button
-                onClick={() => handleLoadExploreTmdb('popular')}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
-                  tmdbExploreTab === 'popular'
-                    ? 'bg-cyan-500 text-slate-950'
-                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-                }`}
-              >
-                🔥 Más Populares del Momento
-              </button>
-            </div>
+            {/* Scrollable Body */}
+            <div className="p-5 space-y-4 overflow-y-auto flex-1">
+              {/* Tabs: En Cartelera vs Populares */}
+              <div className="flex gap-2 border-b border-slate-800 pb-3">
+                <button
+                  onClick={() => handleLoadExploreTmdb('now-playing')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    tmdbExploreTab === 'now-playing'
+                      ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                      : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <Play className="w-3.5 h-3.5" />
+                  <span>En Cartelera Mundial (Now Playing)</span>
+                </button>
 
-            {/* List */}
-            {isLoadingExplore ? (
-              <div className="py-16 text-center text-slate-400 space-y-2">
-                <Loader2 className="w-8 h-8 animate-spin mx-auto text-cyan-400" />
-                <p className="text-xs">Consultando base de datos de TheMovieDB...</p>
+                <button
+                  onClick={() => handleLoadExploreTmdb('popular')}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    tmdbExploreTab === 'popular'
+                      ? 'bg-cyan-500 text-slate-950 shadow-md shadow-cyan-500/20'
+                      : 'bg-slate-800/80 text-slate-300 hover:bg-slate-800'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Populares & Taquilleras</span>
+                </button>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto pr-1">
-                {tmdbExploreList.map((movie) => (
-                  <div
-                    key={movie.id}
-                    className="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between space-y-3 hover:border-slate-700 transition-colors"
-                  >
-                    <div className="flex gap-3">
-                      <img
-                        src={movie.posterUrl}
-                        alt={movie.title}
-                        className="w-16 h-24 object-cover rounded-xl bg-slate-900 shrink-0 shadow-md"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-amber-400 font-bold">⭐ {movie.voteAverage.toFixed(1)}</span>
-                          <span className="text-[10px] text-slate-500">{movie.releaseDate ? movie.releaseDate.split('-')[0] : ''}</span>
+
+              {/* Grid or Loader */}
+              {isLoadingExplore ? (
+                <div className="py-20 flex flex-col items-center justify-center gap-3 text-slate-400">
+                  <Loader2 className="w-8 h-8 text-amber-400 animate-spin" />
+                  <p className="text-xs font-medium">Consultando API oficial de TheMovieDB...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                  {tmdbExploreList.map((movie) => (
+                    <div
+                      key={movie.id}
+                      className="bg-slate-950/80 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between gap-3 hover:border-slate-700 transition-all group"
+                    >
+                      <div className="flex gap-3">
+                        <img
+                          src={movie.posterUrl}
+                          alt={movie.title}
+                          className="w-16 h-24 object-cover rounded-xl bg-slate-900 shrink-0 group-hover:scale-105 transition-transform"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-amber-400 font-bold">⭐ {movie.voteAverage.toFixed(1)}</span>
+                            <span className="text-[10px] text-slate-500">{movie.releaseDate ? movie.releaseDate.split('-')[0] : ''}</span>
+                          </div>
+                          <h4 className="text-xs font-bold text-white mt-1 line-clamp-2">{movie.title}</h4>
+                          <p className="text-[10px] text-slate-400 mt-1 line-clamp-3 leading-relaxed">
+                            {movie.overview || 'Sin descripción disponible.'}
+                          </p>
                         </div>
-                        <h4 className="text-xs font-bold text-white mt-1 line-clamp-2">{movie.title}</h4>
-                        <p className="text-[10px] text-slate-400 mt-1 line-clamp-3 leading-relaxed">
-                          {movie.overview || 'Sin descripción disponible.'}
-                        </p>
+                      </div>
+
+                      <div className="flex gap-1.5 pt-1 border-t border-slate-900">
+                        <button
+                          onClick={() => handleDirectImportTmdb(movie.id, 'CARTELERA')}
+                          className="flex-1 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] rounded-lg flex items-center justify-center gap-1 shadow-md"
+                        >
+                          <Download className="w-3 h-3" />
+                          <span>A Cartelera</span>
+                        </button>
+                        <button
+                          onClick={() => handleDirectImportTmdb(movie.id, 'PROXIMAMENTE')}
+                          className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] rounded-lg"
+                        >
+                          Próximamente
+                        </button>
                       </div>
                     </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                    <div className="flex gap-1.5 pt-1 border-t border-slate-900">
-                      <button
-                        onClick={() => handleDirectImportTmdb(movie.id, 'CARTELERA')}
-                        className="flex-1 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] rounded-lg flex items-center justify-center gap-1 shadow-md"
-                      >
-                        <Download className="w-3 h-3" />
-                        <span>A Cartelera</span>
-                      </button>
-                      <button
-                        onClick={() => handleDirectImportTmdb(movie.id, 'PROXIMAMENTE')}
-                        className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] rounded-lg"
-                      >
-                        Próximamente
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Footer */}
+            <div className="flex justify-end p-4 border-t border-slate-800 shrink-0 bg-slate-950/80">
+              <button
+                type="button"
+                onClick={() => setIsTmdbExploreOpen(false)}
+                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 rounded-xl text-slate-200 text-xs font-bold"
+              >
+                Cerrar Explorador
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1619,17 +1655,31 @@ export const AdminView: React.FC = () => {
       {/* MODAL: ADD SHOWTIME */}
       {/* ========================================================= */}
       {isShowtimeModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-white font-sans">Programar Nueva Función</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-hidden">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-md w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in">
             
-            <form onSubmit={handleSaveShowtime} className="space-y-3 text-xs">
+            {/* Header */}
+            <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0 bg-slate-900">
+              <h3 className="text-base font-bold text-white font-sans flex items-center gap-2">
+                <Clock className="w-5 h-5 text-amber-400" />
+                <span>Programar Nueva Función</span>
+              </h3>
+              <button
+                onClick={() => setIsShowtimeModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Form */}
+            <form id="showtimeForm" onSubmit={handleSaveShowtime} className="p-5 space-y-3.5 text-xs overflow-y-auto flex-1">
               <div>
                 <label className="text-slate-300 font-semibold block mb-1">Película:</label>
                 <select
                   value={newShowtime.movieId}
                   onChange={(e) => setNewShowtime({ ...newShowtime, movieId: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg"
+                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
                 >
                   {movies.map(m => (
                     <option key={m.id} value={m.id}>{m.title}</option>
@@ -1642,22 +1692,25 @@ export const AdminView: React.FC = () => {
                 <select
                   value={newShowtime.roomId}
                   onChange={(e) => setNewShowtime({ ...newShowtime, roomId: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg"
+                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
                 >
                   {rooms.map(r => (
                     <option key={r.id} value={r.id}>{r.name} ({r.type})</option>
                   ))}
+                  {rooms.length === 0 && (
+                    <option value="">Sala Única - Home Cinema (VIP Premium)</option>
+                  )}
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-slate-300 font-semibold block mb-1">Fecha:</label>
                   <input
                     type="date"
                     value={newShowtime.date}
                     onChange={(e) => setNewShowtime({ ...newShowtime, date: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg font-mono"
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl font-mono outline-none focus:border-amber-400"
                   />
                 </div>
                 <div>
@@ -1666,27 +1719,30 @@ export const AdminView: React.FC = () => {
                     type="time"
                     value={newShowtime.startTime}
                     onChange={(e) => setNewShowtime({ ...newShowtime, startTime: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg font-mono"
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl font-mono outline-none focus:border-amber-400"
                   />
                 </div>
               </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setIsShowtimeModalOpen(false)}
-                  className="px-4 py-2 border border-slate-700 rounded-lg text-slate-300 font-semibold"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-bold"
-                >
-                  Programar
-                </button>
-              </div>
             </form>
+
+            {/* Footer */}
+            <div className="flex justify-end gap-2 p-4 border-t border-slate-800 shrink-0 bg-slate-950/80">
+              <button
+                type="button"
+                onClick={() => setIsShowtimeModalOpen(false)}
+                className="px-4 py-2 border border-slate-700 rounded-xl text-slate-300 font-semibold hover:bg-slate-800"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                form="showtimeForm"
+                className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold shadow-md shadow-amber-500/20"
+              >
+                Programar Función
+              </button>
+            </div>
+
           </div>
         </div>
       )}

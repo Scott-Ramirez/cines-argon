@@ -54,15 +54,11 @@ export const AdminView: React.FC = () => {
     setRooms(cinemaStorage.getRooms());
     const loadedPricing = cinemaStorage.getPricing();
     setPricing(loadedPricing);
-    setPriceInputs(prev => {
-      const next: Record<string, string> = { ...prev };
-      loadedPricing.forEach(p => {
-        if (next[p.type] === undefined) {
-          next[p.type] = p.basePrice.toString();
-        }
-      });
-      return next;
+    const nextInputs: Record<string, string> = {};
+    loadedPricing.forEach(p => {
+      nextInputs[p.type] = p.basePrice.toString();
     });
+    setPriceInputs(nextInputs);
     setSales(cinemaStorage.getSales());
     setHeroSlides(cinemaStorage.getHeroSlides());
   };
@@ -296,25 +292,26 @@ export const AdminView: React.FC = () => {
     setPriceInputs(prev => ({ ...prev, [type]: value }));
   };
 
-  const handleSavePrice = (type: string) => {
+  const handleSavePrice = async (type: string) => {
     const val = parseFloat(priceInputs[type]);
     if (isNaN(val) || val <= 0) {
       alert('Por favor ingresa un precio válido mayor a 0');
       return;
     }
     const updatedPricing = pricing.map(p => p.type === type ? { ...p, basePrice: val } : p);
-    cinemaStorage.savePricing(updatedPricing);
+    await cinemaStorage.savePricing(updatedPricing);
     setPricing(updatedPricing);
+    setPriceInputs(prev => ({ ...prev, [type]: val.toString() }));
     setPricingSavedMessage(`Tarifa ${type} actualizada a S/. ${val.toFixed(2)} correctamente.`);
     setTimeout(() => setPricingSavedMessage(''), 4000);
   };
 
-  const handleSaveAllPrices = () => {
+  const handleSaveAllPrices = async () => {
     const updatedPricing = pricing.map(p => {
       const val = parseFloat(priceInputs[p.type]);
       return !isNaN(val) && val > 0 ? { ...p, basePrice: val } : p;
     });
-    cinemaStorage.savePricing(updatedPricing);
+    await cinemaStorage.savePricing(updatedPricing);
     setPricing(updatedPricing);
     setPricingSavedMessage('¡Todas las tarifas y precios fueron actualizados exitosamente!');
     setTimeout(() => setPricingSavedMessage(''), 4000);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Movie, Showtime, Room, PricingTier, Sale, HeroSlide } from '../core/types';
 import { cinemaStorage } from '../services/storage/cinemaStorage';
-import { tmdbApi } from '../services/api/cinemaApi';
+import { tmdbApi, salesApi } from '../services/api/cinemaApi';
 import {
   Film,
   Clock,
@@ -54,7 +54,7 @@ export const AdminView: React.FC = () => {
   // Toast message
   const [pricingSavedMessage, setPricingSavedMessage] = useState<string>('');
 
-  const loadData = () => {
+  const loadData = async () => {
     setMovies(cinemaStorage.getMovies());
     setShowtimes(cinemaStorage.getShowtimes());
     setRooms(cinemaStorage.getRooms());
@@ -65,14 +65,27 @@ export const AdminView: React.FC = () => {
       nextInputs[p.type] = p.basePrice.toString();
     });
     setPriceInputs(nextInputs);
-    setSales(cinemaStorage.getSales());
     setHeroSlides(cinemaStorage.getHeroSlides());
+
+    // Cargar ventas desde la API (MySQL) para persistencia real
+    try {
+      const apiSales = await salesApi.getSales();
+      if (apiSales && Array.isArray(apiSales)) {
+        setSales(apiSales);
+        // Sincronizar también en cache local
+        apiSales.forEach(s => cinemaStorage.saveSale(s));
+        return;
+      }
+    } catch {
+      // Si la API no responde, usar cache local como fallback
+    }
+    setSales(cinemaStorage.getSales());
   };
 
   useEffect(() => {
     loadData();
-    window.addEventListener('argon_storage_update', loadData);
-    return () => window.removeEventListener('argon_storage_update', loadData);
+    window.addEventListener('argon_storage_update', () => loadData());
+    return () => window.removeEventListener('argon_storage_update', () => loadData());
   }, []);
 
   // -------------------------------------------------------------

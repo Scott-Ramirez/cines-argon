@@ -1,0 +1,35 @@
+{
+  "name": "Cines Argón - Tu Cine en Tamanco Viejo",
+  "short_name": "Cines Argón",
+  "description": "Cartelera, horarios y boletos del Cine Argón en Centro Poblado Tamanco Viejo, Emilio San Martín.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07090e",
+  "theme_color": "#f59e0b",
+  "orientation": "portrait-primary",
+  "lang": "es-PE",
+  "scope": "/",
+  "categories": ["entertainment", "lifestyle"],
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Ver Cartelera",
+      "url": "/",
+      "description": "Ver las películas en cartelera de Cines Argón"
+    }
+  ]
+}

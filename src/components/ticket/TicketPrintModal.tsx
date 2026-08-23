@@ -19,7 +19,7 @@ export const TicketPrintModal: React.FC<TicketPrintModalProps> = ({
   const printSourceRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Generate Code128 barcodes for each ticket
+    // Generate high-resolution Code128 barcodes calibrated for 6cm width
     tickets.forEach((ticket) => {
       try {
         const element = document.getElementById(`barcode-${ticket.id}`);
@@ -27,8 +27,8 @@ export const TicketPrintModal: React.FC<TicketPrintModalProps> = ({
           JsBarcode(element, ticket.id, {
             format: 'CODE128',
             lineColor: '#000000',
-            width: 1.1,
-            height: 24,
+            width: 1.5,
+            height: 36,
             displayValue: false,
             margin: 0,
           });
@@ -39,14 +39,10 @@ export const TicketPrintModal: React.FC<TicketPrintModalProps> = ({
     });
   }, [tickets]);
 
-  // Clean, dedicated print mechanism (no dark background contamination)
+  // Print on A4 sheet with multiple tickets per page (2 columns x 3 rows = 6 tickets per A4 sheet)
   const handlePrint = () => {
-    if (!printSourceRef.current) {
-      window.print();
-      return;
-    }
+    if (!printSourceRef.current) return;
 
-    // Create an isolated hidden iframe with pure white background
     const iframe = document.createElement('iframe');
     iframe.style.position = 'fixed';
     iframe.style.right = '0';
@@ -57,12 +53,18 @@ export const TicketPrintModal: React.FC<TicketPrintModalProps> = ({
     document.body.appendChild(iframe);
 
     const doc = iframe.contentWindow?.document;
-    if (!doc) {
-      window.print();
-      return;
-    }
+    if (!doc) return;
 
-    const ticketsHtml = printSourceRef.current.innerHTML;
+    // Clone all ticket cards from the ref and build rows of 2 per row
+    const sourceCards = Array.from(printSourceRef.current.querySelectorAll('.ticket-card'));
+
+    // Build rows: 2 tickets side by side per row
+    let rowsHtml = '';
+    for (let i = 0; i < sourceCards.length; i += 2) {
+      const left = sourceCards[i]?.outerHTML ?? '';
+      const right = sourceCards[i + 1]?.outerHTML ?? '';
+      rowsHtml += `<div class="ticket-row">${left}${right}</div>`;
+    }
 
     doc.open();
     doc.write(`
@@ -70,167 +72,92 @@ export const TicketPrintModal: React.FC<TicketPrintModalProps> = ({
       <html lang="es">
       <head>
         <meta charset="UTF-8">
-        <title>Impresión de Boletos - Cines Argón</title>
+        <title>Boletos - Cines Argón</title>
         <style>
           @page {
-            size: 60mm 120mm;
-            margin: 0mm;
+            size: A4 portrait;
+            margin: 5mm;
           }
-          * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-          }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
           html, body {
-            width: 60mm;
-            background: #ffffff !important;
-            color: #000000 !important;
-            font-family: 'Courier New', Courier, monospace;
+            width: 200mm;
+            background: #fff;
+            color: #000;
+            font-family: Arial, Helvetica, sans-serif;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
-          .ticket-card {
-            width: 60mm;
-            height: 120mm;
-            max-width: 60mm;
-            max-height: 120mm;
-            min-height: 120mm;
-            padding: 4mm 3.5mm;
-            margin: 0 auto;
-            background: #ffffff !important;
-            color: #000000 !important;
+          .ticket-row {
             display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            page-break-after: always;
-            break-after: page;
-            page-break-inside: avoid;
-            break-inside: avoid;
-            overflow: hidden;
+            flex-direction: row;
+            gap: 0;
+            width: 200mm;
           }
-          .ticket-header {
-            text-align: center;
-            border-bottom: 1px dashed #555;
-            padding-bottom: 1.5mm;
+          /* Each ticket cell is 60mm x 120mm with dashed cut border */
+          .ticket-card {
+            width: 60mm !important;
+            height: 120mm !important;
+            min-height: 120mm !important;
+            max-height: 120mm !important;
+            padding: 3mm 2.5mm !important;
+            margin: 0 !important;
+            background: #fff !important;
+            color: #000 !important;
+            display: flex !important;
+            flex-direction: column !important;
+            justify-content: space-between !important;
+            border: 1px dashed #aaa !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            overflow: hidden !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            position: relative !important;
           }
-          .ticket-header h1 {
-            font-size: 13.5px;
-            font-weight: 900;
-            font-family: Arial, Helvetica, sans-serif;
-            letter-spacing: 0.5px;
+          img {
+            width: 20px !important;
+            height: 20px !important;
+            max-width: 20px !important;
+            max-height: 20px !important;
+            object-fit: cover !important;
+            border-radius: 50% !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
           }
-          .ticket-header p.subtitle {
-            font-size: 8px;
-            font-weight: bold;
-            font-family: Arial, Helvetica, sans-serif;
-            color: #333;
-            margin-top: 0.5mm;
-          }
-          .ticket-header p.fiscal {
-            font-size: 7.5px;
-            color: #555;
-          }
-          .movie-section {
-            text-align: center;
-            padding: 1.5mm 0;
-            border-bottom: 1px solid #ddd;
-          }
-          .movie-tag {
-            font-size: 7.5px;
-            color: #666;
-            font-weight: bold;
-            font-family: Arial, Helvetica, sans-serif;
-            text-transform: uppercase;
-          }
-          .movie-title {
-            font-size: 11px;
-            font-weight: 900;
-            font-family: Arial, Helvetica, sans-serif;
-            text-transform: uppercase;
-            line-height: 1.15;
-            margin-top: 0.5mm;
-          }
-          .details-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5mm;
-            font-size: 9.5px;
-            padding: 1.5mm 0;
-          }
+          .ticket-header { text-align: center; border-bottom: 1.5px dashed #444; padding-bottom: 1.5mm; }
+          .logo-container { display: flex; align-items: center; justify-content: center; gap: 2mm; margin-bottom: 0.5mm; }
+          .ticket-header h1 { font-size: 13px; font-weight: 900; letter-spacing: 0.5px; display: inline-block; vertical-align: middle; color: #000; }
+          .ticket-header p.subtitle { font-size: 8.5px; font-weight: bold; color: #222; }
+          .ticket-header p.fiscal { font-size: 7.5px; color: #444; margin-top: 0.5px; }
+          .movie-section { text-align: center; padding: 1mm 0; border-bottom: 1px solid #ccc; }
+          .movie-tag { font-size: 7.5px; color: #555; font-weight: bold; text-transform: uppercase; }
+          .movie-title { font-size: 11.5px; font-weight: 900; text-transform: uppercase; line-height: 1.15; color: #000; }
+          .details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1mm; padding: 1mm 0; }
           .details-grid .row-left { text-align: left; }
           .details-grid .row-right { text-align: right; }
-          .details-grid .label {
-            font-size: 7.5px;
-            color: #555;
-            display: block;
-            text-transform: uppercase;
-          }
-          .details-grid .value {
-            font-weight: bold;
-            color: #000;
-          }
-          .details-grid .price {
-            font-size: 12px;
-            font-weight: 900;
-          }
-          .qr-barcode-section {
-            border-top: 1px dashed #555;
-            border-bottom: 1px dashed #555;
-            padding: 2mm 0;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-          }
-          .qr-barcode-section svg {
-            display: block;
-            margin: 0 auto;
-          }
-          .barcode-id {
-            font-size: 8px;
-            font-family: monospace;
-            letter-spacing: 0.8px;
-            font-weight: bold;
-            margin-top: 1mm;
-          }
-          .ticket-footer {
-            text-align: center;
-            font-size: 7px;
-            color: #444;
-            padding-top: 1mm;
-            line-height: 1.25;
-          }
-          .ticket-footer .meta {
-            display: flex;
-            justify-content: space-between;
-            font-size: 7.5px;
-            font-weight: bold;
-            color: #222;
-            margin-bottom: 0.5mm;
-          }
-          .no-print {
-            display: none !important;
-          }
+          .details-grid .label { font-size: 7.5px; color: #555; display: block; text-transform: uppercase; font-weight: 600; }
+          .details-grid .value { font-size: 10px; font-weight: bold; color: #000; }
+          .details-grid .price { font-size: 12.5px; font-weight: 900; color: #000; }
+          .qr-barcode-section { border-top: 1.5px dashed #444; border-bottom: 1.5px dashed #444; padding: 1.5mm 0; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+          .qr-barcode-section svg { display: block; margin: 0 auto; }
+          .barcode-id { font-size: 8px; font-family: 'Courier New', monospace; letter-spacing: 0.5px; font-weight: bold; margin-top: 0.5mm; color: #111; word-break: break-all; }
+          .ticket-footer { text-align: center; font-size: 7.5px; color: #444; padding-top: 1mm; line-height: 1.2; }
+          .ticket-footer .meta { display: flex; justify-content: space-between; font-size: 8px; font-weight: bold; color: #000; margin-bottom: 0.5mm; }
+          .no-print { display: none !important; }
         </style>
       </head>
-      <body>
-        ${ticketsHtml}
-      </body>
+      <body>${rowsHtml}</body>
       </html>
     `);
     doc.close();
 
-    // Give iframe 300ms to parse SVGs and trigger print
     setTimeout(() => {
       iframe.contentWindow?.focus();
       iframe.contentWindow?.print();
       setTimeout(() => {
-        if (document.body.contains(iframe)) {
-          document.body.removeChild(iframe);
-        }
-      }, 2000);
-    }, 300);
+        if (document.body.contains(iframe)) document.body.removeChild(iframe);
+      }, 2500);
+    }, 400);
   };
 
   return (
@@ -266,11 +193,11 @@ export const TicketPrintModal: React.FC<TicketPrintModalProps> = ({
         {/* Actions Bar - Screen only */}
         <div className="px-6 py-3 bg-slate-950/70 border-b border-slate-800 flex items-center justify-between text-xs">
           <div className="flex items-center gap-2">
-            <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono font-bold text-[11px]">
-              Formato: 6 cm x 12 cm
+            <span className="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 font-mono font-bold text-xs">
+              Medida Oficial: 6 cm x 12 cm
             </span>
             <span className="text-slate-400 hidden sm:inline">
-              (Canon G3170 / 60mm × 120mm)
+              (Canon G3170 / Escala 100%)
             </span>
           </div>
           <button
@@ -283,90 +210,91 @@ export const TicketPrintModal: React.FC<TicketPrintModalProps> = ({
         </div>
 
         {/* Screen Preview & Print Source */}
-        <div className="p-6 max-h-[62vh] overflow-y-auto space-y-6 bg-[#0c1017]">
+        <div className="p-4 sm:p-6 max-h-[72vh] overflow-y-auto bg-[#0c1017] flex flex-col items-center">
           {/* Printable Container referenced by handlePrint */}
-          <div ref={printSourceRef} className="space-y-6">
+          <div ref={printSourceRef} className="space-y-6 w-full flex flex-col items-center">
             {tickets.map((ticket, index) => {
               const qrPayload = formatQrPayload(ticket);
 
               return (
                 <div
                   key={ticket.id}
-                  className="ticket-card mx-auto w-[240px] min-h-[480px] bg-white text-slate-950 p-4 rounded-xl shadow-2xl border-2 border-slate-300 font-mono text-[11px] flex flex-col justify-between relative overflow-hidden"
+                  className="ticket-card mx-auto w-[250px] min-h-[500px] bg-white text-slate-950 p-4 rounded-2xl shadow-2xl border-2 border-slate-300 font-sans text-xs flex flex-col justify-between relative overflow-hidden"
                 >
                   {/* 1. Header */}
                   <div className="ticket-header text-center border-b border-dashed border-slate-400 pb-2 space-y-0.5">
-                    <div className="flex items-center justify-center gap-1.5">
+                    <div className="logo-container flex items-center justify-center gap-2">
                       <img
                         src="/logo.png"
                         alt="Cines Argón"
+                        style={{ width: '24px', height: '24px', maxWidth: '24px', maxHeight: '24px', objectFit: 'cover', borderRadius: '50%', display: 'inline-block', verticalAlign: 'middle' }}
                         className="w-6 h-6 rounded-full object-cover"
                         onError={(e) => {
                           (e.target as HTMLElement).style.display = 'none';
                         }}
                       />
-                      <h1 className="text-sm font-black tracking-wider text-slate-950 font-sans">
+                      <h1 className="text-base font-black tracking-wider text-slate-950 font-sans">
                         CINES ARGÓN
                       </h1>
                     </div>
-                    <p className="subtitle text-[8.5px] text-slate-600 font-sans font-semibold tracking-wide">
+                    <p className="subtitle text-[10px] text-slate-700 font-sans font-bold tracking-wide">
                       CINE CASERO & COMUNITARIO
                     </p>
-                    <p className="fiscal text-[8px] text-slate-500 font-mono">
+                    <p className="fiscal text-[8.5px] text-slate-500 font-mono font-semibold">
                       RUC: 10058605692 • MULTISERVICIOS ARGON
                     </p>
-                    <p className="fiscal text-[7.5px] text-slate-500 font-sans">
+                    <p className="fiscal text-[8px] text-slate-500 font-sans">
                       CP Tamanco Viejo, Emilio San Martín
                     </p>
                   </div>
 
                   {/* 2. Movie & Showtime Details */}
-                  <div className="movie-section py-2 space-y-1.5">
+                  <div className="movie-section py-2 space-y-1">
                     <div className="text-center border-b border-slate-200 pb-1.5">
-                      <span className="movie-tag text-[8px] text-slate-500 uppercase font-sans font-bold block">
+                      <span className="movie-tag text-[9px] text-slate-500 uppercase font-sans font-bold block">
                         PELÍCULA
                       </span>
-                      <h3 className="movie-title text-xs font-black text-slate-950 font-sans uppercase leading-tight">
+                      <h3 className="movie-title text-sm font-black text-slate-950 font-sans uppercase leading-tight">
                         {ticket.movieTitle}
                       </h3>
                     </div>
 
-                    <div className="details-grid grid grid-cols-2 gap-1 text-[10px] pt-0.5 leading-tight">
+                    <div className="details-grid grid grid-cols-2 gap-1.5 text-[11px] pt-1 leading-tight font-sans">
                       <div className="row-left">
-                        <span className="label text-[8px] text-slate-500 block">SALA:</span>
+                        <span className="label text-[8.5px] text-slate-500 block">SALA:</span>
                         <strong className="value text-slate-900 font-bold">{ticket.roomName}</strong>
                       </div>
                       <div className="row-right text-right">
-                        <span className="label text-[8px] text-slate-500 block">FORMATO:</span>
+                        <span className="label text-[8.5px] text-slate-500 block">FORMATO:</span>
                         <strong className="value text-slate-900 font-bold">{ticket.roomType}</strong>
                       </div>
 
                       <div className="row-left">
-                        <span className="label text-[8px] text-slate-500 block">FECHA:</span>
+                        <span className="label text-[8.5px] text-slate-500 block">FECHA:</span>
                         <strong className="value text-slate-900 font-bold">{ticket.showtimeDate}</strong>
                       </div>
                       <div className="row-right text-right">
-                        <span className="label text-[8px] text-slate-500 block">HORA:</span>
-                        <strong className="value text-slate-950 font-black text-amber-800">{ticket.showtimeHour}</strong>
+                        <span className="label text-[8.5px] text-slate-500 block">HORA:</span>
+                        <strong className="value text-slate-950 font-black text-amber-800 text-xs">{ticket.showtimeHour}</strong>
                       </div>
 
                       <div className="row-left">
-                        <span className="label text-[8px] text-slate-500 block">TARIFA:</span>
+                        <span className="label text-[8.5px] text-slate-500 block">TARIFA:</span>
                         <strong className="value text-slate-900 font-bold">{ticket.ticketType}</strong>
                       </div>
                       <div className="row-right text-right">
-                        <span className="label text-[8px] text-slate-500 block">PRECIO:</span>
-                        <strong className="price value text-slate-950 font-black text-xs">S/. {ticket.price.toFixed(2)}</strong>
+                        <span className="label text-[8.5px] text-slate-500 block">PRECIO:</span>
+                        <strong className="price value text-slate-950 font-black text-sm">S/. {ticket.price.toFixed(2)}</strong>
                       </div>
                     </div>
                   </div>
 
                   {/* 3. QR & Barcode Section */}
-                  <div className="qr-barcode-section border-t border-b border-dashed border-slate-400 py-2 flex flex-col items-center justify-center space-y-1.5">
-                    <div className="bg-white p-1 rounded border border-slate-300">
+                  <div className="qr-barcode-section border-t border-b border-dashed border-slate-400 py-2.5 flex flex-col items-center justify-center space-y-2">
+                    <div className="bg-white p-1 rounded border border-slate-300 shadow-sm">
                       <QRCodeSVG
                         value={qrPayload}
-                        size={84}
+                        size={115}
                         level="M"
                         includeMargin={false}
                       />
@@ -374,22 +302,22 @@ export const TicketPrintModal: React.FC<TicketPrintModalProps> = ({
 
                     <div className="text-center w-full">
                       <svg id={`barcode-${ticket.id}`} className="mx-auto" />
-                      <span className="barcode-id text-[8px] font-mono tracking-widest text-slate-700 block font-bold mt-0.5">
+                      <span className="barcode-id text-[9px] font-mono tracking-widest text-slate-800 block font-bold mt-1">
                         {ticket.id}
                       </span>
                     </div>
                   </div>
 
                   {/* 4. Security & Footer Info */}
-                  <div className="ticket-footer text-center text-[7.5px] text-slate-500 space-y-0.5 pt-1 leading-tight">
-                    <div className="meta flex items-center justify-between text-[8px] font-mono text-slate-700 font-semibold">
+                  <div className="ticket-footer text-center text-[8px] text-slate-500 space-y-0.5 pt-1 leading-tight font-sans">
+                    <div className="meta flex items-center justify-between text-[9px] font-mono text-slate-800 font-bold">
                       <span>Silla: Orden de llegada</span>
                       <span>Boleto {index + 1} de {tickets.length}</span>
                     </div>
-                    <p className="font-sans text-[7.5px] text-slate-600">
+                    <p className="font-sans text-[8px] text-slate-600">
                       Presenta este código en puerta para ingresar a la sala.
                     </p>
-                    <p className="text-[7px] text-slate-400">
+                    <p className="text-[7.5px] text-slate-400">
                       Emitido: {new Date(ticket.issuedAt).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })} • Cajero: {sale.cashierName}
                     </p>
                   </div>

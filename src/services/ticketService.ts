@@ -60,7 +60,7 @@ class TicketService {
     const pricing = cinemaStorage.getPricing();
     const priceMap = new Map(pricing.map(p => [p.type, p.basePrice]));
 
-    const saleId = 'VNT-' + Date.now().toString().slice(-6);
+    const saleId = crypto.randomUUID();
     const nowIso = new Date().toISOString();
     const generatedTickets: Ticket[] = [];
     let totalAmount = 0;
@@ -71,7 +71,7 @@ class TicketService {
       const unitPrice = priceMap.get(item.type) || 18.00;
 
       for (let i = 0; i < item.quantity; i++) {
-        const ticketId = 'TKT-' + Math.random().toString(36).substring(2, 7).toUpperCase() + '-' + (generatedTickets.length + 1);
+        const ticketId = crypto.randomUUID();
         const signature = await generateTicketSignature(ticketId, showtime.id, unitPrice, nowIso);
 
         const ticket: Ticket = {
@@ -146,7 +146,7 @@ class TicketService {
           cinemaStorage.saveTicket(apiResult.ticket);
         }
         const log: ScanLog = {
-          id: 'LOG-' + Date.now(),
+          id: crypto.randomUUID(),
           ticketId: apiResult.ticket?.id || rawScanString,
           timestamp,
           result: apiResult.success ? 'VALID' : 'ALREADY_USED',
@@ -181,7 +181,7 @@ class TicketService {
     if (!ticket) {
       soundService.playError();
       const log: ScanLog = {
-        id: 'LOG-' + Date.now(),
+        id: crypto.randomUUID(),
         ticketId: ticketId,
         timestamp,
         result: 'NOT_FOUND',
@@ -200,7 +200,7 @@ class TicketService {
       soundService.playError();
       const usedTime = ticket.usedAt ? new Date(ticket.usedAt).toLocaleTimeString('es-PE') : 'previamente';
       const log: ScanLog = {
-        id: 'LOG-' + Date.now(),
+        id: crypto.randomUUID(),
         ticketId: ticket.id,
         timestamp,
         result: 'ALREADY_USED',
@@ -239,7 +239,7 @@ class TicketService {
     if (ticket.signature !== expectedSignature) {
       soundService.playError();
       const log: ScanLog = {
-        id: 'LOG-' + Date.now(),
+        id: crypto.randomUUID(),
         ticketId: ticket.id,
         timestamp,
         result: 'INVALID_SIGNATURE',
@@ -264,7 +264,7 @@ class TicketService {
     soundService.playSuccess();
 
     const log: ScanLog = {
-      id: 'LOG-' + Date.now(),
+      id: crypto.randomUUID(),
       ticketId: ticket.id,
       timestamp,
       result: 'VALID',

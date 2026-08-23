@@ -128,7 +128,7 @@ export const AdminView: React.FC = () => {
     if (!editingMovie.title || !editingMovie.synopsis) return;
 
     const movieToSave: Movie = {
-      id: editingMovie.id || 'mov-' + Date.now(),
+      id: editingMovie.id || crypto.randomUUID(),
       title: sanitizeInput(editingMovie.title || ''),
       originalTitle: sanitizeInput(editingMovie.originalTitle || ''),
       synopsis: sanitizeInput(editingMovie.synopsis || ''),
@@ -239,7 +239,7 @@ export const AdminView: React.FC = () => {
 
     const room = rooms.find(r => r.id === newShowtime.roomId);
     const showtimeToSave: Showtime = {
-      id: 'st-' + Date.now(),
+      id: crypto.randomUUID(),
       movieId: newShowtime.movieId,
       roomId: newShowtime.roomId,
       date: newShowtime.date,
@@ -286,7 +286,7 @@ export const AdminView: React.FC = () => {
     }
 
     const slideToSave: HeroSlide = {
-      id: editingHeroSlide.id || 'hero-' + Date.now(),
+      id: editingHeroSlide.id || crypto.randomUUID(),
       title: sanitizeInput(editingHeroSlide.title || ''),
       tagline: sanitizeInput(editingHeroSlide.tagline || 'ESTRENO DESTACADO'),
       time: sanitizeInput(editingHeroSlide.time || '5:30 PM'),

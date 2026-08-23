@@ -205,13 +205,13 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLogin }) => {
             {/* Direct WhatsApp Contact Button */}
             <div className="pt-1">
               <a
-                href="https://wa.me/51999999999?text=Hola%20Cines%20Argón,%20quisiera%20consultar%20sobre%20funciones%20o%20reservas"
+                href="https://wa.me/51920569220?text=Hola%20Cines%20Argón,%20quisiera%20consultar%20sobre%20funciones%20o%20reservas"
                 target="_blank"
                 rel="noreferrer"
                 className="w-full py-2.5 px-4 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 hover:border-emerald-500/60 rounded-xl text-xs font-bold text-emerald-300 flex items-center justify-center gap-2 transition-all group shadow-md"
               >
                 <MessageSquare className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-                <span>Atención por WhatsApp / Taquilla</span>
+                <span>WhatsApp: +51 920 569 220</span>
               </a>
             </div>
 

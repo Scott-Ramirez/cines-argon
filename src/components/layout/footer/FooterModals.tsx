@@ -185,13 +185,13 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
 
             <div className="p-4 border-t border-slate-800 flex justify-between items-center shrink-0">
               <a
-                href="https://wa.me/51999999999?text=Hola%20Cines%20Argón,%20quisiera%20cotizar%20el%20alquiler%20de%20la%20sala%20completa"
+                href="https://wa.me/51920569220?text=Hola%20Cines%20Argón,%20quisiera%20cotizar%20el%20alquiler%20de%20la%20sala%20completa"
                 target="_blank"
                 rel="noreferrer"
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs flex items-center gap-1.5"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>Cotizar por WhatsApp</span>
+                <span>Cotizar por WhatsApp (+51 920 569 220)</span>
               </a>
 
               <button

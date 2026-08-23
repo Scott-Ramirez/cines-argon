@@ -11,7 +11,10 @@ import {
   Volume2, 
   AlertTriangle, 
   MessageSquare, 
-  Send 
+  Send,
+  MapPin,
+  Users,
+  Tv
 } from 'lucide-react';
 
 export type FooterModalType = 
@@ -77,7 +80,7 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
             <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Film className="w-5 h-5 text-amber-400" />
-                <span>Sobre Cines Argón</span>
+                <span>Sobre Cines Argón & Propósito</span>
               </h3>
               <button 
                 onClick={onClose}
@@ -89,22 +92,35 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
 
             <div className="p-6 space-y-4 text-xs text-slate-300 leading-relaxed overflow-y-auto flex-1 min-h-0">
               <p>
-                <strong className="text-white">Cines Argón</strong> nace como un concepto exclusivo de <em>Home Cinema Boutique</em>, diseñado para ofrecer la experiencia cinematográfica más inmersiva, íntima y de alta tecnología para cinéfilos y familias.
+                <strong className="text-white">Cines Argón</strong> es una iniciativa cinematográfica familiar y comunitaria impulsada por <em>Multiservicios Argón</em> en el <strong>Centro Poblado Tamanco Viejo, Distrito de Emilio San Martín</strong>.
+              </p>
+
+              <p>
+                Acondicionamos un espacio cálido y acogedor en nuestro local residencial, equipado con proyección en pantalla gigante de alta definición y un potente sistema de sonido surround envolvente, para que nuestros vecinos, jóvenes y familias vivan la emoción del cine sin necesidad de trasladarse a otras ciudades.
               </p>
               
               <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
                 <h4 className="font-bold text-amber-400 text-sm flex items-center gap-1.5">
-                  <Volume2 className="w-4 h-4" /> Especificaciones de la Sala
+                  <Tv className="w-4 h-4" /> Características de Nuestro Espacio:
                 </h4>
                 <ul className="space-y-1.5 text-slate-300">
-                  <li>• <strong>Capacidad:</strong> 1 sala VIP única para 25 butacas ergonómicas reclinables.</li>
-                  <li>• <strong>Acústica:</strong> Sistema surround Dolby Atmos 7.1.4 con calibración DSP digital.</li>
-                  <li>• <strong>Proyección:</strong> Resolución 4K HDR con pantalla acústicamente transparente.</li>
+                  <li className="flex items-start gap-2">
+                    <Users className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
+                    <span><strong>Aforo y Comodidad:</strong> Capacidad para 25 personas con sillas cómodas organizadas para brindar visibilidad óptima a todos los asistentes.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Volume2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                    <span><strong>Sonido Envolvente:</strong> Sistema acústico surround multicanal calibrado para diálogos nítidos y efectos vibrantes.</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                    <span><strong>Ubicación:</strong> Centro Poblado Tamanco Viejo, Distrito de Emilio San Martín (Loreto).</span>
+                  </li>
                 </ul>
               </div>
 
               <p>
-                Garantizamos un ambiente controlado, seguro y con la máxima fidelidad sonora para disfrutar de los mejores títulos de cartelera y clásicos del cine.
+                Priorizamos la buena convivencia, la puntualidad y el trato respetuoso para que cada función sea un momento especial entre amigos y familia.
               </p>
             </div>
 
@@ -133,7 +149,7 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
             <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-amber-400" />
-                <span>Funciones Privadas & Alquiler de Sala</span>
+                <span>Funciones Privadas & Alquiler del Espacio</span>
               </h3>
               <button 
                 onClick={onClose}
@@ -145,53 +161,53 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
 
             <div className="p-6 space-y-4 text-xs text-slate-300 leading-relaxed overflow-y-auto flex-1 min-h-0">
               <p>
-                ¿Deseas tener la sala completa para ti y tus invitados? En <strong>Cines Argón</strong> puedes alquilar la sala en exclusiva (hasta 25 personas) para:
+                ¿Deseas tener la sala exclusivamente para tu familia o grupo de amigos? En <strong>Cines Argón</strong> puedes reservar el espacio completo (hasta 25 personas) para:
               </p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                   <h4 className="font-bold text-white flex items-center gap-1.5">
-                    🎂 Cumpleaños y Fiestas
+                    🎂 Cumpleaños y Celebraciones
                   </h4>
-                  <p className="text-[11px] text-slate-400">Celebra tu fecha especial con tu película favorita y snacks.</p>
+                  <p className="text-[11px] text-slate-400">Proyección especial de la película favorita del agasajado con canchita y refrescos.</p>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                   <h4 className="font-bold text-white flex items-center gap-1.5">
-                    🎮 Torneos de Gaming
+                    🎮 Tardes de Videojuegos
                   </h4>
-                  <p className="text-[11px] text-slate-400">Conecta tu consola en pantalla gigante 4K y sonido envolvente.</p>
+                  <p className="text-[11px] text-slate-400">Conecta tu consola a la pantalla gigante y sonido envolvente para torneos con amigos.</p>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                   <h4 className="font-bold text-white flex items-center gap-1.5">
-                    💼 Eventos Corporativos
+                    👨‍👩‍👧‍👦 Reuniones Familiares
                   </h4>
-                  <p className="text-[11px] text-slate-400">Presentaciones privadas y jornadas de integración para equipos.</p>
+                  <p className="text-[11px] text-slate-400">Una función privada y tranquila solo para tu familia en un ambiente cómodo y seguro.</p>
                 </div>
 
                 <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                   <h4 className="font-bold text-white flex items-center gap-1.5">
-                    🎬 Maratones & Clásicos
+                    🎬 Maratones de Sagas
                   </h4>
-                  <p className="text-[11px] text-slate-400">Proyecciones de sagas completas con tus amigos.</p>
+                  <p className="text-[11px] text-slate-400">Proyecciones de sagas completas, series o clásicos del cine.</p>
                 </div>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
-                💬 <strong>Reservas y Cotizaciones:</strong> Escríbenos directamente a nuestro WhatsApp de atención para coordinar fechas y disponibilidad.
+                💬 <strong>Reservas y Coordinación:</strong> Escríbenos con anticipación a nuestro WhatsApp para verificar fechas y horarios disponibles.
               </div>
             </div>
 
             <div className="p-4 border-t border-slate-800 flex justify-between items-center shrink-0">
               <a
-                href="https://wa.me/51920569220?text=Hola%20Cines%20Argón,%20quisiera%20cotizar%20el%20alquiler%20de%20la%20sala%20completa"
+                href="https://wa.me/51920569220?text=Hola%20Cines%20Argón,%20quisiera%20cotizar%20la%20reserva%20privada%20de%20la%20sala%20en%20Tamanco%20Viejo"
                 target="_blank"
                 rel="noreferrer"
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs flex items-center gap-1.5"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
-                <span>Cotizar por WhatsApp (+51 920 569 220)</span>
+                <span>Consultar por WhatsApp (+51 920 569 220)</span>
               </a>
 
               <button
@@ -218,7 +234,7 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
             <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <ShieldCheck className="w-5 h-5 text-emerald-400" />
-                <span>Reglas de Convivencia y Silencio en Sala</span>
+                <span>Reglas de Convivencia y Respeto en Sala</span>
               </h3>
               <button 
                 onClick={onClose}
@@ -229,30 +245,30 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
             </div>
 
             <div className="p-6 space-y-4 text-xs text-slate-300 leading-relaxed overflow-y-auto flex-1 min-h-0">
-              <p>Para asegurar una experiencia de primer nivel para todos los asistentes, solicitamos respetar las siguientes normas:</p>
+              <p>Para que todos los asistentes disfruten de la función en armonía y tranquilidad, agradecemos seguir estas pautas:</p>
 
               <div className="space-y-3">
                 <div className="flex gap-3 items-start p-3 rounded-xl bg-slate-900 border border-slate-800">
                   <span className="text-amber-400 font-bold text-base">1.</span>
                   <div>
                     <strong className="text-white block mb-0.5">Puntualidad de Ingreso</strong>
-                    <span className="text-slate-400">El acceso a sala se abre 10 minutos antes del inicio. Una vez comenzada la función, el ingreso debe realizarse en silencio.</span>
+                    <span className="text-slate-400">El acceso se abre 10 minutos antes del inicio. Por respeto a los demás, una vez iniciada la película se debe ingresar en silencio.</span>
                   </div>
                 </div>
 
                 <div className="flex gap-3 items-start p-3 rounded-xl bg-slate-900 border border-slate-800">
                   <span className="text-cyan-400 font-bold text-base">2.</span>
                   <div>
-                    <strong className="text-white block mb-0.5">Celulares en Modo Silencio / Cine</strong>
-                    <span className="text-slate-400">Por respeto a los demás espectadores, silencia tu móvil y evita el brillo de pantallas durante la proyección.</span>
+                    <strong className="text-white block mb-0.5">Silencio y Celulares</strong>
+                    <span className="text-slate-400">Por favor, silencia tu teléfono y evita llamadas o luces intensas de pantalla durante la proyección.</span>
                   </div>
                 </div>
 
                 <div className="flex gap-3 items-start p-3 rounded-xl bg-slate-900 border border-slate-800">
                   <span className="text-emerald-400 font-bold text-base">3.</span>
                   <div>
-                    <strong className="text-white block mb-0.5">Cuidado de las Butacas y Equipamiento</strong>
-                    <span className="text-slate-400">Nuestras 25 butacas son de cuero reclinable. Se prohíbe apoyar calzado sobre los asientos o manipular los paneles acústicos.</span>
+                    <strong className="text-white block mb-0.5">Cuidado del Mobiliario y Limpieza</strong>
+                    <span className="text-slate-400">Cuidemos las sillas y el espacio que es para todos. Deposita las bolsas y botellas vacías en el tacho de basura al finalizar.</span>
                   </div>
                 </div>
               </div>
@@ -283,7 +299,7 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
             <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Coffee className="w-5 h-5 text-amber-400" />
-                <span>Política de Snacks y Alimentos Permitidos</span>
+                <span>Snacks y Alimentos Permitidos</span>
               </h3>
               <button 
                 onClick={onClose}
@@ -295,28 +311,28 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
 
             <div className="p-6 space-y-4 text-xs text-slate-300 leading-relaxed overflow-y-auto flex-1 min-h-0">
               <p>
-                Para mantener la higiene de la sala y evitar olores fuertes o ruidos durante la película, contamos con la siguiente política de alimentos:
+                Para mantener limpia la sala y asegurar la comodidad de todos, contamos con las siguientes recomendaciones:
               </p>
 
               <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 space-y-2">
                 <h4 className="font-bold text-emerald-400 text-xs flex items-center gap-1.5">
-                  <CheckCircle2 className="w-4 h-4" /> Alimentos y Bebidas Permitidos:
+                  <CheckCircle2 className="w-4 h-4" /> Permitidos en Sala:
                 </h4>
                 <ul className="space-y-1 text-slate-300">
-                  <li>• Canchita / Popcorn dulce o salado en envase adecuado.</li>
-                  <li>• Bebidas no alcohólicas, agua embotellada, jugos y gaseosas con tapa.</li>
-                  <li>• Chocolates, gomitas y golosinas secas.</li>
+                  <li>• Canchita / Popcorn dulce o salado en bolsa o balde.</li>
+                  <li>• Gaseosas, jugos, agua embotellada y refrescos cerrados.</li>
+                  <li>• Galletas, chocolates, golosinas y snacks secos.</li>
                 </ul>
               </div>
 
               <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-2">
                 <h4 className="font-bold text-rose-400 text-xs flex items-center gap-1.5">
-                  <AlertTriangle className="w-4 h-4" /> Alimentos NO Permitidos:
+                  <AlertTriangle className="w-4 h-4" /> No Permitidos:
                 </h4>
                 <ul className="space-y-1 text-slate-300">
-                  <li>• Comidas calientes con olor penetrante (hamburguesas, pizzas, pollo, etc.).</li>
-                  <li>• Bebidas alcohólicas no autorizadas expresamente.</li>
-                  <li>• Envases de vidrio o elementos punzocortantes.</li>
+                  <li>• Comidas preparadas calientes o con olores penetrantes.</li>
+                  <li>• Bebidas alcohólicas.</li>
+                  <li>• Envases de vidrio que puedan romperse.</li>
                 </ul>
               </div>
             </div>
@@ -358,18 +374,23 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
 
             <div className="p-6 space-y-3.5 text-xs text-slate-300 leading-relaxed overflow-y-auto flex-1 min-h-0">
               <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-                <strong className="text-white block">¿Cómo compro mis boletos?</strong>
-                <p className="text-slate-400">Puedes adquirir tus entradas en la taquilla presencial de Cines Argón o coordinar tu reserva anticipada vía WhatsApp.</p>
+                <strong className="text-white block">¿Dónde se encuentra ubicado el cine?</strong>
+                <p className="text-slate-400">Estamos ubicados en el Centro Poblado Tamanco Viejo, en el Distrito de Emilio San Martín.</p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                <strong className="text-white block">¿Cómo es la sala y los asientos?</strong>
+                <p className="text-slate-400">Es un espacio casero y familiar acondicionado con pantalla gigante, sonido surround y 25 sillas cómodas organizadas para una óptima visión.</p>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
+                <strong className="text-white block">¿Cómo compro o separo mis entradas?</strong>
+                <p className="text-slate-400">Puedes adquirir tu boleto directamente en la taquilla presencial o comunicarte por WhatsApp al +51 920 569 220 para separar tus sillas con anticipación.</p>
               </div>
 
               <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                 <strong className="text-white block">¿Cómo funciona la validación con Código QR?</strong>
-                <p className="text-slate-400">Cada boleto emitido cuenta con un código QR único y seguro (UUID v4). Al ingresar a la sala, nuestro personal escanea tu código en la puerta para darte acceso inmediato.</p>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
-                <strong className="text-white block">¿Se pueden elegir butacas?</strong>
-                <p className="text-slate-400">Las 25 butacas son de primera categoría reclinables y se asignan por orden de llegada y confirmación de reserva.</p>
+                <p className="text-slate-400">Cada boleto emitido tiene un código QR único que nuestro encargado escanea en la entrada para registrar tu ingreso de manera rápida y ordenada.</p>
               </div>
             </div>
 
@@ -385,7 +406,7 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
         </div>
       )}
 
-      {/* MODAL 6: POLÍTICA DE PROTECCIÓN DE DATOS & TÉRMINOS */}
+      {/* MODAL 6: TÉRMINOS Y CONDICIONES */}
       {(activeModal === 'privacy' || activeModal === 'terms') && (
         <div 
           onClick={onClose}
@@ -398,7 +419,7 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
             <div className="flex items-center justify-between p-5 border-b border-slate-800 shrink-0">
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <FileText className="w-5 h-5 text-amber-400" />
-                <span>{activeModal === 'privacy' ? 'Protección de Datos Personales' : 'Términos y Condiciones'}</span>
+                <span>{activeModal === 'privacy' ? 'Protección de Datos Personales' : 'Términos y Condiciones del Servicio'}</span>
               </h3>
               <button 
                 onClick={onClose}
@@ -411,20 +432,22 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
             <div className="p-6 space-y-3 text-xs text-slate-300 leading-relaxed overflow-y-auto flex-1 min-h-0">
               {activeModal === 'privacy' ? (
                 <>
-                  <p>En cumplimiento de la <strong>Ley N° 29733 (Ley de Protección de Datos Personales de Perú)</strong>, Cines Argón S.A.C. informa:</p>
+                  <p>En <strong>MULTISERVICIOS ARGON (Ramirez Gonzales Alfredo)</strong> respetamos tu privacidad:</p>
                   <ul className="space-y-1.5 list-disc pl-4 text-slate-400">
-                    <li>Los datos personales recopilados para emisión de boletos o comprobantes se tratan con absoluta confidencialidad.</li>
-                    <li>No compartimos ni comercializamos información con terceros no autorizados.</li>
-                    <li>Puedes ejercer tus derechos ARCO (Acceso, Rectificación, Cancelación y Oposición) contactando a nuestra administración.</li>
+                    <li>Los datos solicitados (nombre, teléfono) para la reserva o emisión de boletos se utilizan exclusivamente para la gestión del servicio.</li>
+                    <li>No compartimos tu información personal con terceros.</li>
+                    <li>Operamos con transparencia y respeto en nuestra comunidad.</li>
                   </ul>
                 </>
               ) : (
                 <>
-                  <p><strong>Condiciones Generales del Servicio:</strong></p>
-                  <ul className="space-y-1.5 list-disc pl-4 text-slate-400">
-                    <li>Los boletos son válidos únicamente para la película, fecha y horario indicados.</li>
-                    <li>El código QR es intransferible una vez validado en puerta.</li>
-                    <li>La administración se reserva el derecho de admisión en caso de incumplimiento de las normas de convivencia.</li>
+                  <p><strong>Condiciones del Servicio de Proyección:</strong></p>
+                  <ul className="space-y-2 list-disc pl-4 text-slate-400">
+                    <li><strong>Ubicación del Servicio:</strong> Centro Poblado Tamanco Viejo, Distrito de Emilio San Martín.</li>
+                    <li><strong>Naturaleza de la Sala:</strong> Sala íntima/casera comunitaria con capacidad máxima para 25 personas en sillas organizadas.</li>
+                    <li><strong>Validez del Boleto:</strong> El boleto da derecho a una silla para la película, fecha y horario indicados.</li>
+                    <li><strong>Orden de Llegada:</strong> La ubicación de las sillas se ocupa por orden de llegada al momento del ingreso.</li>
+                    <li><strong>Derecho de Convivencia:</strong> Nos reservamos el derecho de pedir el retiro a personas que alteren el orden o falten el respeto a los demás asistentes.</li>
                   </ul>
                 </>
               )}
@@ -435,7 +458,7 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
                 onClick={onClose}
                 className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold text-xs"
               >
-                Cerrar
+                Entendido
               </button>
             </div>
           </div>
@@ -482,7 +505,7 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
               ) : (
                 <form onSubmit={handleReclamacionSubmit} className="space-y-3 text-xs">
                   <p className="text-[11px] text-slate-400">
-                    Conforme a lo establecido en el Código de Protección y Defensa del Consumidor (Ley N° 29571).
+                    Establecimiento: CP Tamanco Viejo, Distrito de Emilio San Martín. Razón Comercial: MULTISERVICIOS ARGON.
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

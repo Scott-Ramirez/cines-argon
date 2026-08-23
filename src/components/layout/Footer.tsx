@@ -2,12 +2,15 @@ import React, { useState } from 'react';
 import { 
   Lock, 
   Clock, 
-  ShieldCheck, 
+  MapPin, 
+  Users, 
   BookOpen, 
   HelpCircle, 
   MessageSquare, 
-  Award, 
-  Coffee 
+  Coffee, 
+  FileText, 
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 import { FooterModals, FooterModalType } from './footer/FooterModals';
 
@@ -21,13 +24,13 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLogin }) => {
 
   return (
     <footer className="mt-20 border-t border-slate-800/80 bg-[#040609] text-slate-400 no-print relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         
         {/* Main 3 Columns Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10 pb-12 border-b border-slate-800/70">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-10 border-b border-slate-800/70">
           
           {/* ========================================================= */}
-          {/* COLUMNA 1: ACERCA DE CINES ARGÓN */}
+          {/* COLUMNA 1: IDENTIDAD, CONCEPTO Y UBICACIÓN */}
           {/* ========================================================= */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -46,237 +49,182 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLogin }) => {
                   CINES ARGÓN
                 </span>
                 <span className="block text-[10px] text-amber-500/90 font-mono font-bold tracking-wider">
-                  SALA PRIVADA & HOME CINEMA
+                  CINE CASERO & COMUNITARIO
                 </span>
               </div>
             </div>
 
             <p className="text-xs text-slate-400 leading-relaxed">
-              La primera sala exclusiva Home Cinema VIP de 25 butacas reclinables, con calibración acústica profesional Dolby Atmos y proyección láser de alta fidelidad.
+              Un espacio acogedor y familiar acondicionado en nuestro local residencial, equipado con proyección en alta definición y sonido envolvente para brindar a nuestros vecinos la magia del cine en un ambiente cercano y seguro.
             </p>
 
+            {/* Badges de Ubicación y Aforo */}
             <div className="space-y-2 pt-1">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 font-mono flex items-center gap-2">
-                <Award className="w-3.5 h-3.5 text-amber-400" /> Acerca de Nosotros
-              </h4>
-              <ul className="text-xs space-y-1.5">
-                <li>
-                  <button
-                    onClick={() => setActiveModal('about')}
-                    className="hover:text-amber-400 transition-colors text-left"
-                  >
-                    • Sobre Cines Argón & Nuestra Historia
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => setActiveModal('private-events')}
-                    className="hover:text-amber-400 transition-colors text-left flex items-center gap-1.5"
-                  >
-                    <span>• Funciones Privadas & Alquiler de Sala</span>
-                    <span className="px-1.5 py-0.2 bg-amber-500/20 text-amber-300 text-[9px] font-bold rounded">VIP</span>
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => setActiveModal('about')}
-                    className="hover:text-amber-400 transition-colors text-left"
-                  >
-                    • Tecnología Acústica Dolby Atmos 7.1.4
-                  </button>
-                </li>
-              </ul>
-            </div>
-
-            {/* Badge de Garantía VIP */}
-            <div className="p-3 rounded-2xl bg-slate-900/80 border border-slate-800/80 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                <ShieldCheck className="w-4 h-4" />
+              <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center gap-2.5 text-xs">
+                <MapPin className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="text-slate-300 font-medium">
+                  CP Tamanco Viejo, Distrito de Emilio San Martín
+                </span>
               </div>
-              <div className="text-[11px] leading-tight">
-                <span className="font-bold text-slate-200 block">Experiencia VIP Garantizada</span>
-                <span className="text-slate-400">Aforo exclusivo limitado a 25 personas</span>
+
+              <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center gap-2.5 text-xs">
+                <Users className="w-4 h-4 text-cyan-400 shrink-0" />
+                <span className="text-slate-300 font-medium">
+                  Sala acondicionada con sillas cómodas (Aforo: 25 personas)
+                </span>
               </div>
             </div>
           </div>
 
           {/* ========================================================= */}
-          {/* COLUMNA 2: CONVIVENCIA Y DULCERÍA */}
+          {/* COLUMNA 2: HORARIOS Y GUÍA DE SALA */}
           {/* ========================================================= */}
           <div className="space-y-4">
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 font-mono flex items-center gap-2 mb-3">
-                <Coffee className="w-3.5 h-3.5 text-amber-400" /> Protocolos & Convivencia
-              </h4>
-              <ul className="text-xs space-y-2 text-slate-400">
-                <li>
-                  <button
-                    onClick={() => setActiveModal('rules')}
-                    className="hover:text-cyan-400 transition-colors text-left block"
-                  >
-                    • Reglas de Convivencia y Silencio en Sala
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => setActiveModal('snacks')}
-                    className="hover:text-cyan-400 transition-colors text-left block"
-                  >
-                    • Lista de Snacks y Alimentos Permitidos
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => setActiveModal('rules')}
-                    className="hover:text-cyan-400 transition-colors text-left block"
-                  >
-                    • Climatización y Confort Ergonómico
-                  </button>
-                </li>
-                <li>
-                  <button
-                    onClick={() => setActiveModal('rules')}
-                    className="hover:text-cyan-400 transition-colors text-left block"
-                  >
-                    • Política de Ingreso y Puntualidad
-                  </button>
-                </li>
-              </ul>
-            </div>
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 font-mono flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5 text-amber-400" /> Funciones & Convivencia
+            </h4>
 
-            {/* Horarios de Funciones Habituales */}
+            {/* Horarios habituales */}
             <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-2">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300 font-mono flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-amber-400" /> Horarios de Funciones
+              <span className="text-[11px] font-bold text-slate-300 font-mono block">
+                Horarios de Proyección Habituales:
               </span>
-              <div className="space-y-1.5 text-xs text-slate-400">
+              <div className="space-y-1.5 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1.5 text-slate-400">
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Función Familiar:
                   </span>
                   <strong className="text-slate-200 font-mono">5:30 PM</strong>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-1.5 text-slate-400">
                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" /> Función Estelar:
                   </span>
                   <strong className="text-slate-200 font-mono">8:00 PM</strong>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* ========================================================= */}
-          {/* COLUMNA 3: AYUDA Y CONTACTO */}
-          {/* ========================================================= */}
-          <div className="space-y-4">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 font-mono flex items-center gap-2">
-              <HelpCircle className="w-3.5 h-3.5 text-cyan-400" /> Ayuda & Atención
-            </h4>
-
-            <ul className="text-xs space-y-2 text-slate-400">
+            {/* Enlaces informativos */}
+            <ul className="text-xs space-y-2 text-slate-400 pt-1">
               <li>
                 <button
-                  onClick={() => setActiveModal('faq')}
-                  className="hover:text-cyan-400 transition-colors text-left block"
+                  onClick={() => setActiveModal('about')}
+                  className="hover:text-amber-400 transition-colors text-left flex items-center gap-2"
                 >
-                  • Centro de Ayuda & Preguntas Frecuentes (FAQ)
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Sobre Nuestro Cine & Propósito Comunitario</span>
                 </button>
               </li>
               <li>
                 <button
-                  onClick={() => setActiveModal('faq')}
-                  className="hover:text-cyan-400 transition-colors text-left block"
+                  onClick={() => setActiveModal('snacks')}
+                  className="hover:text-amber-400 transition-colors text-left flex items-center gap-2"
                 >
-                  • ¿Cómo validar mis Boletos con Código QR?
+                  <Coffee className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Snacks y Alimentos Permitidos</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => setActiveModal('rules')}
+                  className="hover:text-amber-400 transition-colors text-left flex items-center gap-2"
+                >
+                  <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+                  <span>Reglas de Convivencia y Respeto en Sala</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => setActiveModal('private-events')}
+                  className="hover:text-amber-400 transition-colors text-left flex items-center gap-2"
+                >
+                  <Users className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Funciones Privadas & Alquiler del Espacio</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* ========================================================= */}
+          {/* COLUMNA 3: ATENCIÓN AL CLIENTE & LEGAL */}
+          {/* ========================================================= */}
+          <div className="space-y-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 font-mono flex items-center gap-2">
+              <HelpCircle className="w-3.5 h-3.5 text-cyan-400" /> Atención & Legal
+            </h4>
+
+            <p className="text-xs text-slate-400">
+              ¿Deseas consultar la cartelera del día o separar tus sillas anticipadamente?
+            </p>
+
+            {/* Direct WhatsApp Contact Button */}
+            <a
+              href="https://wa.me/51920569220?text=Hola%20Cines%20Argón,%20quisiera%20consultar%20sobre%20las%20funciones%20o%20separar%20sillas"
+              target="_blank"
+              rel="noreferrer"
+              className="w-full py-2.5 px-4 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 hover:border-emerald-500/60 rounded-xl text-xs font-bold text-emerald-300 flex items-center justify-center gap-2 transition-all group shadow-md"
+            >
+              <MessageSquare className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
+              <span>WhatsApp: +51 920 569 220</span>
+            </a>
+
+            <ul className="text-xs space-y-2 text-slate-400 pt-1">
+              <li>
+                <button
+                  onClick={() => setActiveModal('faq')}
+                  className="hover:text-cyan-400 transition-colors text-left flex items-center gap-2"
+                >
+                  <HelpCircle className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Preguntas Frecuentes (FAQ)</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => setActiveModal('terms')}
+                  className="hover:text-cyan-400 transition-colors text-left flex items-center gap-2"
+                >
+                  <FileText className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Términos y Condiciones del Servicio</span>
                 </button>
               </li>
               <li>
                 <button
                   onClick={() => setActiveModal('reclamaciones')}
-                  className="hover:text-amber-400 transition-colors text-left flex items-center gap-1.5 text-amber-300 font-semibold"
+                  className="hover:text-amber-400 transition-colors text-left flex items-center gap-2 text-amber-300 font-semibold"
                 >
                   <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                  <span>• Libro de Reclamaciones Virtual</span>
+                  <span>Libro de Reclamaciones Virtual</span>
                 </button>
               </li>
             </ul>
-
-            {/* Direct WhatsApp Contact Button */}
-            <div className="pt-1">
-              <a
-                href="https://wa.me/51920569220?text=Hola%20Cines%20Argón,%20quisiera%20consultar%20sobre%20funciones%20o%20reservas"
-                target="_blank"
-                rel="noreferrer"
-                className="w-full py-2.5 px-4 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 hover:border-emerald-500/60 rounded-xl text-xs font-bold text-emerald-300 flex items-center justify-center gap-2 transition-all group shadow-md"
-              >
-                <MessageSquare className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-                <span>WhatsApp: +51 920 569 220</span>
-              </a>
-            </div>
-
           </div>
 
         </div>
 
         {/* ========================================================= */}
-        {/* SUB-FOOTER: POLÍTICAS Y REGLAS LEGALES (Cineplanet Style) */}
-        {/* ========================================================= */}
-        <div className="py-6 border-b border-slate-800/60 flex flex-wrap items-center justify-center gap-x-6 gap-y-2.5 text-xs text-slate-400">
-          <button
-            onClick={() => setActiveModal('privacy')}
-            className="hover:text-white transition-colors"
-          >
-            Política de Protección de Datos Personales
-          </button>
-          <span className="text-slate-700 hidden sm:inline">•</span>
-
-          <button
-            onClick={() => setActiveModal('terms')}
-            className="hover:text-white transition-colors"
-          >
-            Términos y Condiciones de Boletos
-          </button>
-          <span className="text-slate-700 hidden sm:inline">•</span>
-
-          <button
-            onClick={() => setActiveModal('rules')}
-            className="hover:text-white transition-colors"
-          >
-            Reglas de Convivencia en Sala
-          </button>
-          <span className="text-slate-700 hidden sm:inline">•</span>
-
-          <button
-            onClick={() => setActiveModal('reclamaciones')}
-            className="hover:text-amber-400 transition-colors flex items-center gap-1.5 font-bold text-slate-300"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span>Libro de Reclamaciones</span>
-          </button>
-        </div>
-
-        {/* ========================================================= */}
-        {/* BOTTOM BAR: RAZÓN SOCIAL, REDES & ACCESO ADMINISTRATIVO */}
+        {/* BOTTOM BAR: RAZÓN SOCIAL, UBICACIÓN & ACCESO INTRANET */}
         {/* ========================================================= */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
           
           <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-3 text-slate-500 text-center sm:text-left">
-            <span className="font-semibold text-slate-400">MULTISERVICIOS ARGON</span>
-            <span className="hidden sm:inline">|</span>
+            <span className="font-semibold text-slate-300">MULTISERVICIOS ARGON</span>
+            <span className="hidden sm:inline">•</span>
             <span>RAMIREZ GONZALES ALFREDO</span>
-            <span className="hidden sm:inline">|</span>
+            <span className="hidden sm:inline">•</span>
             <span className="font-mono text-slate-400 font-bold">RUC 10058605692</span>
-            <span className="hidden sm:inline">|</span>
-            <span>© {currentYear} Todos los derechos reservados.</span>
+            <span className="hidden sm:inline">•</span>
+            <span>Tamanco Viejo, Emilio San Martín</span>
+            <span className="hidden sm:inline">•</span>
+            <span>© {currentYear}</span>
           </div>
 
-          {/* Social & Admin Buttons */}
+          {/* Intranet Staff Login Button */}
           <div className="flex items-center gap-3">
             <button
               onClick={onOpenLogin}
               className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/60 hover:bg-slate-800/80 border border-slate-800 hover:border-amber-500/40 text-slate-400 hover:text-amber-400 transition-all font-mono text-[11px] group"
-              title="Acceso administrativo restringido"
+              title="Acceso para el personal / taquilla"
             >
               <Lock className="w-3 h-3 text-slate-500 group-hover:text-amber-400 transition-colors" />
               <span>Intranet</span>

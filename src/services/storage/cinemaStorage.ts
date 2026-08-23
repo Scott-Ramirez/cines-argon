@@ -1,0 +1,339 @@
+import { Movie, Room, Showtime, Ticket, Sale, ScanLog, PricingTier, HeroSlide } from '../../core/types';
+
+const STORAGE_KEYS = {
+  MOVIES: 'argon_movies_v1',
+  ROOMS: 'argon_rooms_v1',
+  SHOWTIMES: 'argon_showtimes_v1',
+  TICKETS: 'argon_tickets_v1',
+  SALES: 'argon_sales_v1',
+  SCAN_LOGS: 'argon_scan_logs_v1',
+  PRICING: 'argon_pricing_v1',
+  HERO_SLIDES: 'argon_hero_slides_v1',
+};
+
+const INITIAL_MOVIES: Movie[] = [
+  {
+    id: 'mov-1',
+    title: 'Dune: Parte Dos',
+    originalTitle: 'Dune: Part Two',
+    synopsis: 'Paul Atreides se une a Chani y a los Fremen mientras busca venganza contra los conspiradores que destruyeron a su familia.',
+    durationMinutes: 166,
+    rating: '14+',
+    genre: ['Ciencia Ficción', 'Aventura', 'Acción'],
+    posterUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop',
+    backdropUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop',
+    status: 'CARTELERA',
+    director: 'Denis Villeneuve'
+  },
+  {
+    id: 'mov-2',
+    title: 'Spider-Man: Beyond the Spider-Verse',
+    originalTitle: 'Spider-Man: Beyond the Spider-Verse',
+    synopsis: 'Miles Morales es catapultado a través del Multiverso, donde se encuentra con un equipo de Spider-Personas encargadas de proteger su existencia.',
+    durationMinutes: 140,
+    rating: 'APT',
+    genre: ['Animación', 'Acción', 'Superhéroes'],
+    posterUrl: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?q=80&w=800&auto=format&fit=crop',
+    backdropUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1600&auto=format&fit=crop',
+    status: 'CARTELERA',
+    director: 'Joaquim Dos Santos'
+  },
+  {
+    id: 'mov-3',
+    title: 'Gladiador II',
+    originalTitle: 'Gladiator II',
+    synopsis: 'Años después de presenciar la muerte del venerado héroe Máximo a manos de su tío, Lucio debe entrar en el Coliseo.',
+    durationMinutes: 148,
+    rating: '18+',
+    genre: ['Acción', 'Drama', 'Histórico'],
+    posterUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=800&auto=format&fit=crop',
+    backdropUrl: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=1600&auto=format&fit=crop',
+    status: 'CARTELERA',
+    director: 'Ridley Scott'
+  },
+  {
+    id: 'mov-4',
+    title: 'Intensamente 2',
+    originalTitle: 'Inside Out 2',
+    synopsis: 'Riley entra a la adolescencia y el cuartel general sufre una repentina demolición para hacer sitio a nuevas emociones inesperadas.',
+    durationMinutes: 96,
+    rating: 'APT',
+    genre: ['Animación', 'Comedia', 'Familiar'],
+    posterUrl: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=800&auto=format&fit=crop',
+    backdropUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop',
+    status: 'CARTELERA',
+    director: 'Kelsey Mann'
+  },
+  {
+    id: 'mov-5',
+    title: 'Oppenheimer',
+    originalTitle: 'Oppenheimer',
+    synopsis: 'La historia del científico estadounidense J. Robert Oppenheimer y su papel en el desarrollo de la bomba atómica.',
+    durationMinutes: 180,
+    rating: '18+',
+    genre: ['Drama', 'Historia', 'Biografía'],
+    posterUrl: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=800&auto=format&fit=crop',
+    status: 'CARTELERA',
+    director: 'Christopher Nolan'
+  },
+  {
+    id: 'mov-6',
+    title: 'Avatar: El Fuego y las Cenizas',
+    originalTitle: 'Avatar: Fire and Ash',
+    synopsis: 'El próximo capítulo en el viaje de Jake Sully y Neytiri explorando nuevas tribus de Pandora.',
+    durationMinutes: 190,
+    rating: '14+',
+    genre: ['Aventura', 'Ciencia Ficción'],
+    posterUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop',
+    status: 'PROXIMAMENTE',
+    director: 'James Cameron'
+  }
+];
+
+// Single Cinema Room (Home Cinema)
+const INITIAL_ROOMS: Room[] = [
+  { id: 'room-1', name: 'Sala Única - Home Cinema Argón', type: 'VIP Premium', capacity: 25, soundSystem: 'Dolby Atmos 7.1.4 Surround' },
+];
+
+const todayStr = new Date().toISOString().split('T')[0];
+
+// Restricted Home Cinema Schedule (5:30 PM afternoon, 8:00 PM evening)
+const INITIAL_SHOWTIMES: Showtime[] = [
+  { id: 'st-1', movieId: 'mov-2', roomId: 'room-1', date: todayStr, startTime: '17:30', endTime: '19:50', availableSeats: 25 },
+  { id: 'st-2', movieId: 'mov-1', roomId: 'room-1', date: todayStr, startTime: '20:00', endTime: '22:46', availableSeats: 25 },
+];
+
+const INITIAL_HERO_SLIDES: HeroSlide[] = [
+  {
+    id: 'hero-1',
+    title: 'Spider-Man: Beyond the Spider-Verse',
+    tagline: 'FUNCIÓN DE LA TARDE (NIÑOS & FAMILIA)',
+    time: '5:30 PM',
+    rating: 'APT (Todo Público)',
+    durationMinutes: 140,
+    genres: ['Animación', 'Acción', 'Familiar'],
+    synopsis: 'Miles Morales emprende una emocionante travesía a través del multiverso junto a Gwen Stacy y nuevos aliados.',
+    backdropUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1600&auto=format&fit=crop',
+    posterUrl: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?q=80&w=800&auto=format&fit=crop',
+    active: true,
+    order: 1,
+    movieId: 'mov-2'
+  },
+  {
+    id: 'hero-2',
+    title: 'Dune: Parte Dos',
+    tagline: 'FUNCIÓN ESTELAR (+12 / ADULTOS)',
+    time: '8:00 PM',
+    rating: '+14 / +12',
+    durationMinutes: 166,
+    genres: ['Ciencia Ficción', 'Aventura', 'Acción'],
+    synopsis: 'El mítico viaje de Paul Atreides mientras se une a Chani y a los Fremen en una guerra de proporciones épicas.',
+    backdropUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop',
+    posterUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop',
+    active: true,
+    order: 2,
+    movieId: 'mov-1'
+  }
+];
+
+const INITIAL_PRICING: PricingTier[] = [
+  { type: 'GENERAL', label: 'Boleto General', description: 'Acceso para adultos', basePrice: 18.00 },
+  { type: 'NINO', label: 'Niños (Hasta 11 años)', description: 'Tarifa infantil reducida', basePrice: 13.50 },
+  { type: 'ADULTO_MAYOR', label: 'Adulto Mayor (60+)', description: 'Descuento con documento', basePrice: 13.50 },
+  { type: 'PROMO_DUO', label: 'Promo Pareja (2x)', description: 'Paquete 2 entradas generales', basePrice: 30.00 },
+];
+
+class CinemaStorageService {
+  private notifyChange(): void {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('argon_storage_update'));
+    }
+  }
+
+  private getItem<T>(key: string, defaultValue: T): T {
+    try {
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : defaultValue;
+    } catch {
+      return defaultValue;
+    }
+  }
+
+  private setItem<T>(key: string, value: T): void {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      this.notifyChange();
+    } catch (e) {
+      console.error('Storage write error', e);
+    }
+  }
+
+  getMovies(): Movie[] {
+    const movies = this.getItem<Movie[]>(STORAGE_KEYS.MOVIES, []);
+    if (!movies || movies.length === 0) {
+      this.setItem(STORAGE_KEYS.MOVIES, INITIAL_MOVIES);
+      return INITIAL_MOVIES;
+    }
+    return movies;
+  }
+
+  saveMovie(movie: Movie): void {
+    const movies = this.getMovies();
+    const index = movies.findIndex(m => m.id === movie.id);
+    if (index >= 0) {
+      movies[index] = movie;
+    } else {
+      movies.unshift(movie);
+    }
+    this.setItem(STORAGE_KEYS.MOVIES, movies);
+  }
+
+  deleteMovie(id: string): void {
+    const movies = this.getMovies().filter(m => m.id !== id);
+    this.setItem(STORAGE_KEYS.MOVIES, movies);
+  }
+
+  getRooms(): Room[] {
+    const rooms = this.getItem<Room[]>(STORAGE_KEYS.ROOMS, []);
+    if (!rooms || rooms.length === 0) {
+      this.setItem(STORAGE_KEYS.ROOMS, INITIAL_ROOMS);
+      return INITIAL_ROOMS;
+    }
+    return rooms;
+  }
+
+  getShowtimes(): Showtime[] {
+    const showtimes = this.getItem<Showtime[]>(STORAGE_KEYS.SHOWTIMES, []);
+    if (!showtimes || showtimes.length === 0) {
+      this.setItem(STORAGE_KEYS.SHOWTIMES, INITIAL_SHOWTIMES);
+      return INITIAL_SHOWTIMES;
+    }
+    return showtimes;
+  }
+
+  saveShowtime(showtime: Showtime): void {
+    const showtimes = this.getShowtimes();
+    const index = showtimes.findIndex(s => s.id === showtime.id);
+    if (index >= 0) {
+      showtimes[index] = showtime;
+    } else {
+      showtimes.push(showtime);
+    }
+    this.setItem(STORAGE_KEYS.SHOWTIMES, showtimes);
+  }
+
+  deleteShowtime(id: string): void {
+    const showtimes = this.getShowtimes().filter(s => s.id !== id);
+    this.setItem(STORAGE_KEYS.SHOWTIMES, showtimes);
+  }
+
+  getPricing(): PricingTier[] {
+    const pricing = this.getItem<PricingTier[]>(STORAGE_KEYS.PRICING, []);
+    if (!pricing || pricing.length === 0) {
+      this.setItem(STORAGE_KEYS.PRICING, INITIAL_PRICING);
+      return INITIAL_PRICING;
+    }
+    return pricing;
+  }
+
+  savePricing(pricing: PricingTier[]): void {
+    this.setItem(STORAGE_KEYS.PRICING, pricing);
+  }
+
+  getTickets(): Ticket[] {
+    return this.getItem<Ticket[]>(STORAGE_KEYS.TICKETS, []);
+  }
+
+  saveTicket(ticket: Ticket): void {
+    const tickets = this.getTickets();
+    const index = tickets.findIndex(t => t.id === ticket.id);
+    if (index >= 0) {
+      tickets[index] = ticket;
+    } else {
+      tickets.unshift(ticket);
+    }
+    this.setItem(STORAGE_KEYS.TICKETS, tickets);
+  }
+
+  saveBatchTickets(newTickets: Ticket[]): void {
+    const tickets = this.getTickets();
+    this.setItem(STORAGE_KEYS.TICKETS, [...newTickets, ...tickets]);
+  }
+
+  getTicketById(id: string): Ticket | undefined {
+    return this.getTickets().find(t => t.id === id);
+  }
+
+  getSales(): Sale[] {
+    return this.getItem<Sale[]>(STORAGE_KEYS.SALES, []);
+  }
+
+  saveSale(sale: Sale): void {
+    const sales = this.getSales();
+    sales.unshift(sale);
+    this.setItem(STORAGE_KEYS.SALES, sales);
+  }
+
+  getScanLogs(): ScanLog[] {
+    return this.getItem<ScanLog[]>(STORAGE_KEYS.SCAN_LOGS, []);
+  }
+
+  addScanLog(log: ScanLog): void {
+    const logs = this.getScanLogs();
+    logs.unshift(log);
+    this.setItem(STORAGE_KEYS.SCAN_LOGS, logs.slice(0, 200));
+  }
+
+  getHeroSlides(): HeroSlide[] {
+    const slides = this.getItem<HeroSlide[]>(STORAGE_KEYS.HERO_SLIDES, []);
+    if (!slides || slides.length === 0) {
+      this.setItem(STORAGE_KEYS.HERO_SLIDES, INITIAL_HERO_SLIDES);
+      return INITIAL_HERO_SLIDES;
+    }
+    return slides.sort((a, b) => a.order - b.order);
+  }
+
+  saveHeroSlide(slide: HeroSlide): void {
+    const slides = this.getHeroSlides();
+    const index = slides.findIndex(s => s.id === slide.id);
+    if (index >= 0) {
+      slides[index] = slide;
+    } else {
+      slides.push(slide);
+    }
+    this.setItem(STORAGE_KEYS.HERO_SLIDES, slides);
+  }
+
+  deleteHeroSlide(id: string): void {
+    const slides = this.getHeroSlides().filter(s => s.id !== id);
+    this.setItem(STORAGE_KEYS.HERO_SLIDES, slides);
+  }
+
+  toggleHeroSlideStatus(id: string): void {
+    const slides = this.getHeroSlides();
+    const slide = slides.find(s => s.id === id);
+    if (slide) {
+      slide.active = !slide.active;
+      this.setItem(STORAGE_KEYS.HERO_SLIDES, slides);
+    }
+  }
+
+  saveHeroSlides(slides: HeroSlide[]): void {
+    this.setItem(STORAGE_KEYS.HERO_SLIDES, slides);
+  }
+
+  resetToDemo(): void {
+    localStorage.clear();
+    this.setItem(STORAGE_KEYS.MOVIES, INITIAL_MOVIES);
+    this.setItem(STORAGE_KEYS.ROOMS, INITIAL_ROOMS);
+    this.setItem(STORAGE_KEYS.SHOWTIMES, INITIAL_SHOWTIMES);
+    this.setItem(STORAGE_KEYS.PRICING, INITIAL_PRICING);
+    this.setItem(STORAGE_KEYS.HERO_SLIDES, INITIAL_HERO_SLIDES);
+    this.setItem(STORAGE_KEYS.TICKETS, []);
+    this.setItem(STORAGE_KEYS.SALES, []);
+    this.setItem(STORAGE_KEYS.SCAN_LOGS, []);
+    this.notifyChange();
+  }
+}
+
+export const cinemaStorage = new CinemaStorageService();

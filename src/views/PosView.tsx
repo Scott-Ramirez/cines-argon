@@ -250,6 +250,9 @@ export const PosView: React.FC = () => {
                   {availableShowtimes.map((st) => {
                     const isSelected = st.id === selectedShowtimeId;
                     const room = rooms.find(r => r.id === st.roomId);
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const isToday = st.date === todayStr;
+
                     return (
                       <button
                         key={st.id}
@@ -260,14 +263,17 @@ export const PosView: React.FC = () => {
                             : 'bg-slate-950/70 border-slate-800 hover:border-amber-500/40 text-slate-300'
                         }`}
                       >
+                        <span className={`text-[10px] font-mono font-bold block mb-0.5 ${isSelected ? 'text-slate-900' : 'text-slate-400'}`}>
+                          {isToday ? '📅 HOY' : `📅 ${st.date}`}
+                        </span>
                         <span className={`font-mono text-xl font-black block ${isSelected ? 'text-slate-950' : 'text-amber-400'}`}>
                           {st.startTime}
                         </span>
                         <span className={`text-[10px] block mt-0.5 truncate font-semibold ${isSelected ? 'text-slate-900' : 'text-slate-400'}`}>
-                          {room?.name || 'Sala'}
+                          {room?.name || 'Sala VIP'}
                         </span>
-                        <span className={`text-[9px] block font-mono ${isSelected ? 'text-slate-800' : 'text-emerald-400'}`}>
-                          {st.availableSeats} disp.
+                        <span className={`text-[9px] block font-mono ${isSelected ? 'text-slate-800' : 'text-emerald-400 font-bold'}`}>
+                          {st.availableSeats} disponibles
                         </span>
                       </button>
                     );
@@ -275,7 +281,7 @@ export const PosView: React.FC = () => {
                 </div>
               ) : (
                 <div className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl text-center text-slate-400 text-xs">
-                  No hay funciones programadas para esta película hoy.
+                  No hay funciones programadas para esta película. Programa una función en el Panel Admin.
                 </div>
               )}
             </div>

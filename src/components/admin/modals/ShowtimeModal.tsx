@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Movie, Room } from '../../../core/types';
 import { Clock } from 'lucide-react';
 
@@ -25,25 +25,41 @@ export const ShowtimeModal: React.FC<ShowtimeModalProps> = ({
   onSave
 }) => {
   const [newShowtime, setNewShowtime] = useState({
-    movieId: movies[0]?.id || '',
-    roomId: rooms[0]?.id || '',
+    movieId: '',
+    roomId: '',
     date: new Date().toISOString().split('T')[0],
     startTime: '17:30',
     endTime: '19:50',
-    availableSeats: rooms[0]?.capacity || 25
+    availableSeats: 25
   });
+
+  // Keep state synchronized whenever modal opens or movie/room lists change
+  useEffect(() => {
+    if (isOpen) {
+      setNewShowtime({
+        movieId: movies[0]?.id || '',
+        roomId: rooms[0]?.id || '',
+        date: new Date().toISOString().split('T')[0],
+        startTime: '17:30',
+        endTime: '19:50',
+        availableSeats: rooms[0]?.capacity || 25
+      });
+    }
+  }, [isOpen, movies, rooms]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newShowtime.movieId) {
-      alert('Debes seleccionar una película');
+    const finalMovieId = newShowtime.movieId || movies[0]?.id;
+    if (!finalMovieId) {
+      alert('Debes seleccionar o tener registrada al menos una película.');
       return;
     }
     const selectedRoom = rooms.find(r => r.id === newShowtime.roomId) || rooms[0];
     onSave({
       ...newShowtime,
+      movieId: finalMovieId,
       roomId: selectedRoom?.id || 'room-1',
       availableSeats: selectedRoom?.capacity || 25
     });
@@ -77,7 +93,7 @@ export const ShowtimeModal: React.FC<ShowtimeModalProps> = ({
           <div>
             <label className="text-slate-300 font-semibold block mb-1">Película:</label>
             <select
-              value={newShowtime.movieId}
+              value={newShowtime.movieId || movies[0]?.id || ''}
               onChange={(e) => setNewShowtime({ ...newShowtime, movieId: e.target.value })}
               className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
             >
@@ -90,7 +106,7 @@ export const ShowtimeModal: React.FC<ShowtimeModalProps> = ({
           <div>
             <label className="text-slate-300 font-semibold block mb-1">Sala:</label>
             <select
-              value={newShowtime.roomId}
+              value={newShowtime.roomId || rooms[0]?.id || ''}
               onChange={(e) => setNewShowtime({ ...newShowtime, roomId: e.target.value })}
               className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
             >
@@ -108,6 +124,7 @@ export const ShowtimeModal: React.FC<ShowtimeModalProps> = ({
               <label className="text-slate-300 font-semibold block mb-1">Fecha:</label>
               <input
                 type="date"
+                required
                 value={newShowtime.date}
                 onChange={(e) => setNewShowtime({ ...newShowtime, date: e.target.value })}
                 className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl font-mono outline-none focus:border-amber-400"
@@ -117,6 +134,7 @@ export const ShowtimeModal: React.FC<ShowtimeModalProps> = ({
               <label className="text-slate-300 font-semibold block mb-1">Hora Inicio:</label>
               <input
                 type="time"
+                required
                 value={newShowtime.startTime}
                 onChange={(e) => setNewShowtime({ ...newShowtime, startTime: e.target.value })}
                 className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl font-mono outline-none focus:border-amber-400"

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Movie, MovieRating, MovieStatus } from '../../../core/types';
 import { tmdbApi, TmdbSearchResult } from '../../../services/api/cinemaApi';
 import { Film, Search, Loader2 } from 'lucide-react';
@@ -20,6 +20,15 @@ export const MovieModal: React.FC<MovieModalProps> = ({
   const [tmdbSearchQuery, setTmdbSearchQuery] = useState<string>('');
   const [isSearchingTmdb, setIsSearchingTmdb] = useState<boolean>(false);
   const [tmdbSearchResults, setTmdbSearchResults] = useState<TmdbSearchResult[]>([]);
+
+  // Synchronize state when editingMovie prop changes
+  useEffect(() => {
+    if (isOpen) {
+      setEditingMovie(initialMovie || {});
+      setTmdbSearchResults([]);
+      setTmdbSearchQuery('');
+    }
+  }, [initialMovie, isOpen]);
 
   if (!isOpen) return null;
 

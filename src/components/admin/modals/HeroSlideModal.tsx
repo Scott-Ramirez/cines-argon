@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { HeroSlide, Movie } from '../../../core/types';
 import { tmdbApi, TmdbSearchResult } from '../../../services/api/cinemaApi';
 import { Sparkles, Search, Loader2 } from 'lucide-react';
@@ -22,6 +22,15 @@ export const HeroSlideModal: React.FC<HeroSlideModalProps> = ({
   const [heroTmdbSearchQuery, setHeroTmdbSearchQuery] = useState<string>('');
   const [isSearchingHeroTmdb, setIsSearchingHeroTmdb] = useState<boolean>(false);
   const [heroTmdbResults, setHeroTmdbResults] = useState<TmdbSearchResult[]>([]);
+
+  // Synchronize state when editingSlide prop changes
+  useEffect(() => {
+    if (isOpen) {
+      setEditingHeroSlide(initialSlide || {});
+      setHeroTmdbResults([]);
+      setHeroTmdbSearchQuery('');
+    }
+  }, [initialSlide, isOpen]);
 
   if (!isOpen) return null;
 

@@ -21,136 +21,6 @@ const STORAGE_KEYS = {
   HERO_SLIDES: 'argon_hero_slides_v1',
 };
 
-const INITIAL_MOVIES: Movie[] = [
-  {
-    id: 'mov-1',
-    title: 'Dune: Parte Dos',
-    originalTitle: 'Dune: Part Two',
-    synopsis: 'Paul Atreides se une a Chani y a los Fremen mientras busca venganza contra los conspiradores que destruyeron a su familia.',
-    durationMinutes: 166,
-    rating: '14+',
-    genre: ['Ciencia Ficción', 'Aventura', 'Acción'],
-    posterUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop',
-    backdropUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop',
-    status: 'CARTELERA',
-    director: 'Denis Villeneuve'
-  },
-  {
-    id: 'mov-2',
-    title: 'Spider-Man: Beyond the Spider-Verse',
-    originalTitle: 'Spider-Man: Beyond the Spider-Verse',
-    synopsis: 'Miles Morales es catapultado a través del Multiverso, donde se encuentra con un equipo de Spider-Personas encargadas de proteger su existencia.',
-    durationMinutes: 140,
-    rating: 'APT',
-    genre: ['Animación', 'Acción', 'Superhéroes'],
-    posterUrl: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?q=80&w=800&auto=format&fit=crop',
-    backdropUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1600&auto=format&fit=crop',
-    status: 'CARTELERA',
-    director: 'Joaquim Dos Santos'
-  },
-  {
-    id: 'mov-3',
-    title: 'Gladiador II',
-    originalTitle: 'Gladiator II',
-    synopsis: 'Años después de presenciar la muerte del venerado héroe Máximo a manos de su tío, Lucio debe entrar en el Coliseo.',
-    durationMinutes: 148,
-    rating: '18+',
-    genre: ['Acción', 'Drama', 'Histórico'],
-    posterUrl: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?q=80&w=800&auto=format&fit=crop',
-    backdropUrl: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?q=80&w=1600&auto=format&fit=crop',
-    status: 'CARTELERA',
-    director: 'Ridley Scott'
-  },
-  {
-    id: 'mov-4',
-    title: 'Intensamente 2',
-    originalTitle: 'Inside Out 2',
-    synopsis: 'Riley entra a la adolescencia y el cuartel general sufre una repentina demolición para hacer sitio a nuevas emociones inesperadas.',
-    durationMinutes: 96,
-    rating: 'APT',
-    genre: ['Animación', 'Comedia', 'Familiar'],
-    posterUrl: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?q=80&w=800&auto=format&fit=crop',
-    backdropUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop',
-    status: 'CARTELERA',
-    director: 'Kelsey Mann'
-  },
-  {
-    id: 'mov-5',
-    title: 'Oppenheimer',
-    originalTitle: 'Oppenheimer',
-    synopsis: 'La historia del científico estadounidense J. Robert Oppenheimer y su papel en el desarrollo de la bomba atómica.',
-    durationMinutes: 180,
-    rating: '18+',
-    genre: ['Drama', 'Historia', 'Biografía'],
-    posterUrl: 'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?q=80&w=800&auto=format&fit=crop',
-    status: 'CARTELERA',
-    director: 'Christopher Nolan'
-  },
-  {
-    id: 'mov-6',
-    title: 'Avatar: El Fuego y las Cenizas',
-    originalTitle: 'Avatar: Fire and Ash',
-    synopsis: 'El próximo capítulo en el viaje de Jake Sully y Neytiri explorando nuevas tribus de Pandora.',
-    durationMinutes: 190,
-    rating: '14+',
-    genre: ['Aventura', 'Ciencia Ficción'],
-    posterUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=800&auto=format&fit=crop',
-    status: 'PROXIMAMENTE',
-    director: 'James Cameron'
-  }
-];
-
-const INITIAL_ROOMS: Room[] = [
-  { id: 'room-1', name: 'Sala Única - Home Cinema Argón', type: 'VIP Premium', capacity: 25, soundSystem: 'Dolby Atmos 7.1.4 Surround' },
-];
-
-const todayStr = new Date().toISOString().split('T')[0];
-
-const INITIAL_SHOWTIMES: Showtime[] = [
-  { id: 'st-1', movieId: 'mov-2', roomId: 'room-1', date: todayStr, startTime: '17:30', endTime: '19:50', availableSeats: 25 },
-  { id: 'st-2', movieId: 'mov-1', roomId: 'room-1', date: todayStr, startTime: '20:00', endTime: '22:46', availableSeats: 25 },
-];
-
-const INITIAL_HERO_SLIDES: HeroSlide[] = [
-  {
-    id: 'hero-1',
-    title: 'Spider-Man: Beyond the Spider-Verse',
-    tagline: 'FUNCIÓN DE LA TARDE (NIÑOS & FAMILIA)',
-    time: '5:30 PM',
-    rating: 'APT (Todo Público)',
-    durationMinutes: 140,
-    genres: ['Animación', 'Acción', 'Familiar'],
-    synopsis: 'Miles Morales emprende una emocionante travesía a través del multiverso junto a Gwen Stacy y nuevos aliados.',
-    backdropUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?q=80&w=1600&auto=format&fit=crop',
-    posterUrl: 'https://images.unsplash.com/photo-1635805737707-575885ab0820?q=80&w=800&auto=format&fit=crop',
-    active: true,
-    order: 1,
-    movieId: 'mov-2'
-  },
-  {
-    id: 'hero-2',
-    title: 'Dune: Parte Dos',
-    tagline: 'FUNCIÓN ESTELAR (+12 / ADULTOS)',
-    time: '8:00 PM',
-    rating: '+14 / +12',
-    durationMinutes: 166,
-    genres: ['Ciencia Ficción', 'Aventura', 'Acción'],
-    synopsis: 'El mítico viaje de Paul Atreides mientras se une a Chani y a los Fremen en una guerra de proporciones épicas.',
-    backdropUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1600&auto=format&fit=crop',
-    posterUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?q=80&w=800&auto=format&fit=crop',
-    active: true,
-    order: 2,
-    movieId: 'mov-1'
-  }
-];
-
-const INITIAL_PRICING: PricingTier[] = [
-  { type: 'GENERAL', label: 'Boleto General', description: 'Acceso para adultos', basePrice: 18.00 },
-  { type: 'NINO', label: 'Niños (Hasta 11 años)', description: 'Tarifa infantil reducida', basePrice: 13.50 },
-  { type: 'ADULTO_MAYOR', label: 'Adulto Mayor (60+)', description: 'Descuento con documento', basePrice: 13.50 },
-  { type: 'PROMO_DUO', label: 'Promo Pareja (2x)', description: 'Paquete 2 entradas generales', basePrice: 30.00 },
-];
-
 class CinemaStorageService {
   private isSyncing = false;
 
@@ -169,7 +39,7 @@ class CinemaStorageService {
   private getItem<T>(key: string, defaultValue: T): T {
     try {
       const data = localStorage.getItem(key);
-      return data ? JSON.parse(data) : defaultValue;
+      return data !== null ? JSON.parse(data) : defaultValue;
     } catch {
       return defaultValue;
     }
@@ -200,28 +70,28 @@ class CinemaStorageService {
           validatorApi.getLogs(),
         ]);
 
-      if (movies.status === 'fulfilled' && movies.value?.length) {
+      if (movies.status === 'fulfilled' && Array.isArray(movies.value)) {
         this.setItem(STORAGE_KEYS.MOVIES, movies.value);
       }
-      if (rooms.status === 'fulfilled' && rooms.value?.length) {
+      if (rooms.status === 'fulfilled' && Array.isArray(rooms.value)) {
         this.setItem(STORAGE_KEYS.ROOMS, rooms.value);
       }
-      if (showtimes.status === 'fulfilled' && showtimes.value?.length) {
+      if (showtimes.status === 'fulfilled' && Array.isArray(showtimes.value)) {
         this.setItem(STORAGE_KEYS.SHOWTIMES, showtimes.value);
       }
-      if (pricing.status === 'fulfilled' && pricing.value?.length) {
+      if (pricing.status === 'fulfilled' && Array.isArray(pricing.value)) {
         this.setItem(STORAGE_KEYS.PRICING, pricing.value);
       }
-      if (heroSlides.status === 'fulfilled' && heroSlides.value?.length) {
+      if (heroSlides.status === 'fulfilled' && Array.isArray(heroSlides.value)) {
         this.setItem(STORAGE_KEYS.HERO_SLIDES, heroSlides.value);
       }
-      if (sales.status === 'fulfilled' && sales.value?.length) {
+      if (sales.status === 'fulfilled' && Array.isArray(sales.value)) {
         this.setItem(STORAGE_KEYS.SALES, sales.value);
       }
-      if (tickets.status === 'fulfilled' && tickets.value?.length) {
+      if (tickets.status === 'fulfilled' && Array.isArray(tickets.value)) {
         this.setItem(STORAGE_KEYS.TICKETS, tickets.value);
       }
-      if (scanLogs.status === 'fulfilled' && scanLogs.value?.length) {
+      if (scanLogs.status === 'fulfilled' && Array.isArray(scanLogs.value)) {
         this.setItem(STORAGE_KEYS.SCAN_LOGS, scanLogs.value);
       }
     } catch (err: any) {
@@ -232,12 +102,7 @@ class CinemaStorageService {
   }
 
   getMovies(): Movie[] {
-    const movies = this.getItem<Movie[]>(STORAGE_KEYS.MOVIES, []);
-    if (!movies || movies.length === 0) {
-      this.setItem(STORAGE_KEYS.MOVIES, INITIAL_MOVIES);
-      return INITIAL_MOVIES;
-    }
-    return movies;
+    return this.getItem<Movie[]>(STORAGE_KEYS.MOVIES, []);
   }
 
   async saveMovie(movie: Movie): Promise<void> {
@@ -250,7 +115,7 @@ class CinemaStorageService {
     }
     this.setItem(STORAGE_KEYS.MOVIES, movies);
 
-    // Sync to backend
+    // Sync to backend MySQL
     try {
       if (index >= 0) {
         await moviesApi.updateMovie(movie.id, movie);
@@ -274,12 +139,7 @@ class CinemaStorageService {
   }
 
   getRooms(): Room[] {
-    const rooms = this.getItem<Room[]>(STORAGE_KEYS.ROOMS, []);
-    if (!rooms || rooms.length === 0) {
-      this.setItem(STORAGE_KEYS.ROOMS, INITIAL_ROOMS);
-      return INITIAL_ROOMS;
-    }
-    return rooms;
+    return this.getItem<Room[]>(STORAGE_KEYS.ROOMS, []);
   }
 
   async saveRoom(room: Room): Promise<void> {
@@ -315,12 +175,7 @@ class CinemaStorageService {
   }
 
   getShowtimes(): Showtime[] {
-    const showtimes = this.getItem<Showtime[]>(STORAGE_KEYS.SHOWTIMES, []);
-    if (!showtimes || showtimes.length === 0) {
-      this.setItem(STORAGE_KEYS.SHOWTIMES, INITIAL_SHOWTIMES);
-      return INITIAL_SHOWTIMES;
-    }
-    return showtimes;
+    return this.getItem<Showtime[]>(STORAGE_KEYS.SHOWTIMES, []);
   }
 
   async saveShowtime(showtime: Showtime): Promise<void> {
@@ -356,12 +211,7 @@ class CinemaStorageService {
   }
 
   getPricing(): PricingTier[] {
-    const pricing = this.getItem<PricingTier[]>(STORAGE_KEYS.PRICING, []);
-    if (!pricing || pricing.length === 0) {
-      this.setItem(STORAGE_KEYS.PRICING, INITIAL_PRICING);
-      return INITIAL_PRICING;
-    }
-    return pricing;
+    return this.getItem<PricingTier[]>(STORAGE_KEYS.PRICING, []);
   }
 
   async savePricing(pricing: PricingTier[]): Promise<void> {
@@ -420,10 +270,6 @@ class CinemaStorageService {
 
   getHeroSlides(): HeroSlide[] {
     const slides = this.getItem<HeroSlide[]>(STORAGE_KEYS.HERO_SLIDES, []);
-    if (!slides || slides.length === 0) {
-      this.setItem(STORAGE_KEYS.HERO_SLIDES, INITIAL_HERO_SLIDES);
-      return INITIAL_HERO_SLIDES;
-    }
     return slides.sort((a, b) => a.order - b.order);
   }
 
@@ -478,16 +324,15 @@ class CinemaStorageService {
     this.setItem(STORAGE_KEYS.HERO_SLIDES, slides);
   }
 
-  resetToDemo(): void {
-    localStorage.clear();
-    this.setItem(STORAGE_KEYS.MOVIES, INITIAL_MOVIES);
-    this.setItem(STORAGE_KEYS.ROOMS, INITIAL_ROOMS);
-    this.setItem(STORAGE_KEYS.SHOWTIMES, INITIAL_SHOWTIMES);
-    this.setItem(STORAGE_KEYS.PRICING, INITIAL_PRICING);
-    this.setItem(STORAGE_KEYS.HERO_SLIDES, INITIAL_HERO_SLIDES);
-    this.setItem(STORAGE_KEYS.TICKETS, []);
-    this.setItem(STORAGE_KEYS.SALES, []);
-    this.setItem(STORAGE_KEYS.SCAN_LOGS, []);
+  clearLocalCache(): void {
+    localStorage.removeItem(STORAGE_KEYS.MOVIES);
+    localStorage.removeItem(STORAGE_KEYS.ROOMS);
+    localStorage.removeItem(STORAGE_KEYS.SHOWTIMES);
+    localStorage.removeItem(STORAGE_KEYS.PRICING);
+    localStorage.removeItem(STORAGE_KEYS.HERO_SLIDES);
+    localStorage.removeItem(STORAGE_KEYS.TICKETS);
+    localStorage.removeItem(STORAGE_KEYS.SALES);
+    localStorage.removeItem(STORAGE_KEYS.SCAN_LOGS);
     this.notifyChange();
   }
 }

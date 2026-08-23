@@ -222,89 +222,103 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
             </div>
 
             {/* Movies Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredBillboard.map((movie) => {
-                const movieShowtimes = getMovieShowtimes(movie.id);
+            {filteredBillboard.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredBillboard.map((movie) => {
+                  const movieShowtimes = getMovieShowtimes(movie.id);
 
-                return (
-                  <div
-                    key={movie.id}
-                    className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl overflow-hidden shadow-xl transition-all duration-300 hover:-translate-y-1 group flex flex-col justify-between"
-                  >
-                    <div>
-                      {/* Poster and Badges */}
-                      <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-950">
-                        <img
-                          src={movie.backdropUrl || movie.posterUrl}
-                          alt={movie.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 filter brightness-90"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
-                        
-                        <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                          <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black text-[10px]">
-                            {movie.rating}
-                          </span>
-                          <span className="px-2 py-0.5 rounded bg-slate-950/80 backdrop-blur border border-slate-700 text-slate-300 font-bold text-[10px] flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-slate-400" /> {movie.durationMinutes} min
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Info Body */}
-                      <div className="p-5 space-y-2">
-                        <h3 className="text-lg font-black text-white font-sans group-hover:text-amber-400 transition-colors line-clamp-1">
-                          {movie.title}
-                        </h3>
-
-                        <div className="flex flex-wrap gap-1.5">
-                          {movie.genre.map(g => (
-                            <span key={g} className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700/60">
-                              {g}
+                  return (
+                    <div
+                      key={movie.id}
+                      className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl overflow-hidden shadow-xl transition-all duration-300 hover:-translate-y-1 group flex flex-col justify-between"
+                    >
+                      <div>
+                        {/* Poster and Badges */}
+                        <div className="relative aspect-[16/10] w-full overflow-hidden bg-slate-950">
+                          <img
+                            src={movie.backdropUrl || movie.posterUrl}
+                            alt={movie.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 filter brightness-90"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
+                          
+                          <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                            <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black text-[10px]">
+                              {movie.rating}
                             </span>
-                          ))}
+                            <span className="px-2 py-0.5 rounded bg-slate-950/80 backdrop-blur border border-slate-700 text-slate-300 font-bold text-[10px] flex items-center gap-1">
+                              <Clock className="w-3 h-3 text-slate-400" /> {movie.durationMinutes} min
+                            </span>
+                          </div>
                         </div>
 
-                        <p className="text-xs text-slate-400 line-clamp-2 leading-relaxed">
-                          {movie.synopsis}
-                        </p>
+                        {/* Info Body */}
+                        <div className="p-5 space-y-2">
+                          <h3 className="text-lg font-black text-white font-sans group-hover:text-amber-400 transition-colors line-clamp-1">
+                            {movie.title}
+                          </h3>
+
+                          <div className="flex flex-wrap gap-1.5">
+                            {movie.genre.map((g) => (
+                              <span
+                                key={g}
+                                className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700/60"
+                              >
+                                {g}
+                              </span>
+                            ))}
+                          </div>
+
+                          <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed pt-1">
+                            {movie.synopsis}
+                          </p>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Showtimes Grid */}
-                    <div className="p-5 pt-0 border-t border-slate-800/60 mt-3 bg-slate-950/40">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block mb-2 pt-3">
-                        HORARIOS & SALAS DISPONIBLES:
-                      </span>
-                      
-                      {movieShowtimes.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2">
-                          {movieShowtimes.map((st) => (
-                            <div
-                              key={st.id}
-                              className="bg-slate-900 border border-slate-800 hover:border-amber-500/50 p-2.5 rounded-xl text-center transition-all group/st"
-                            >
-                              <span className="font-mono font-black text-base text-amber-400 block group-hover/st:text-amber-300">
-                                {st.startTime}
-                              </span>
-                              <span className="text-[10px] text-slate-400 block truncate font-sans">
-                                {getRoomName(st.roomId)}
-                              </span>
-                              <span className="text-[9px] text-emerald-400 font-mono font-semibold">
-                                {st.availableSeats} disponibles
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-slate-500 italic py-2">Sin funciones programadas para hoy</p>
-                      )}
-                    </div>
+                      {/* Showtimes Pill Row */}
+                      <div className="p-5 pt-0 border-t border-slate-800/80 mt-2">
+                        <span className="text-[10px] font-bold text-amber-400 uppercase tracking-wider block mb-2">
+                          Horarios Disponibles
+                        </span>
+                        
+                        {movieShowtimes.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {movieShowtimes.map((st) => (
+                              <div
+                                key={st.id}
+                                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-amber-500/20 border border-slate-700 hover:border-amber-500/50 text-slate-200 transition-colors flex items-center gap-2"
+                              >
+                                <Clock className="w-3 h-3 text-amber-400" />
+                                <span className="font-bold text-xs font-mono">{st.startTime}</span>
+                                <span className="text-[10px] text-slate-400">({st.availableSeats} disp.)</span>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-slate-500 italic py-2">Sin funciones programadas para hoy</p>
+                        )}
+                      </div>
 
-                  </div>
-                );
-              })}
-            </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-16 bg-slate-900/40 rounded-3xl border border-dashed border-slate-800 space-y-3">
+                <Film className="w-10 h-10 text-amber-400/60 mx-auto animate-pulse" />
+                <h3 className="text-lg font-bold text-white">Cartelera en Preparación</h3>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  Actualmente no hay películas en la base de datos. Ingresa a la Intranet de Administración para importar películas desde TheMovieDB o programar nuevas funciones.
+                </p>
+                <button
+                  onClick={onOpenLogin}
+                  className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl inline-flex items-center gap-1.5 transition-colors shadow-lg shadow-amber-500/20"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Acceder como Administrador</span>
+                </button>
+              </div>
+            )}
 
           </div>
         )}

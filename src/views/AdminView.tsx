@@ -372,11 +372,13 @@ export const AdminView: React.FC = () => {
     }
   };
 
-  // --- Factory Demo Reset ---
-  const handleResetData = () => {
-    if (confirm('⚠️ ¿Desea restablecer todos los datos de demostración de Cines Argón a su estado inicial de fábrica?')) {
-      cinemaStorage.resetToDemo();
-      alert('Datos restaurados correctamente.');
+  // --- Limpiar Cache y Re-sincronizar con MySQL ---
+  const handleResetData = async () => {
+    if (confirm('¿Desea limpiar el caché local y re-sincronizar con la base de datos de Cines Argón?')) {
+      cinemaStorage.clearLocalCache();
+      await cinemaStorage.syncFromBackend();
+      loadData();
+      alert('Caché sincronizado con la base de datos.');
     }
   };
 

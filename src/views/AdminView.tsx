@@ -7,13 +7,15 @@ import {
   Clock,
   DollarSign,
   BarChart3,
-  Sparkles
+  Sparkles,
+  Tv
 } from 'lucide-react';
 
 // Subcomponents
 import { AdminHeroTab } from '../components/admin/tabs/AdminHeroTab';
 import { AdminMoviesTab } from '../components/admin/tabs/AdminMoviesTab';
 import { AdminShowtimesTab } from '../components/admin/tabs/AdminShowtimesTab';
+import { AdminRoomsTab } from '../components/admin/tabs/AdminRoomsTab';
 import { AdminPricingTab } from '../components/admin/tabs/AdminPricingTab';
 import { AdminAuditTab } from '../components/admin/tabs/AdminAuditTab';
 
@@ -22,9 +24,10 @@ import { HeroSlideModal } from '../components/admin/modals/HeroSlideModal';
 import { MovieModal } from '../components/admin/modals/MovieModal';
 import { TmdbExploreModal } from '../components/admin/modals/TmdbExploreModal';
 import { ShowtimeModal } from '../components/admin/modals/ShowtimeModal';
+import { RoomModal } from '../components/admin/modals/RoomModal';
 
 export const AdminView: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'hero' | 'movies' | 'showtimes' | 'pricing' | 'audit'>('hero');
+  const [activeTab, setActiveTab] = useState<'hero' | 'movies' | 'showtimes' | 'rooms' | 'pricing' | 'audit'>('hero');
   
   // Data States
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -44,6 +47,9 @@ export const AdminView: React.FC = () => {
 
   const [isTmdbExploreOpen, setIsTmdbExploreOpen] = useState<boolean>(false);
   const [isShowtimeModalOpen, setIsShowtimeModalOpen] = useState<boolean>(false);
+
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState<boolean>(false);
+  const [editingRoom, setEditingRoom] = useState<Partial<Room>>({});
 
   // Toast message
   const [pricingSavedMessage, setPricingSavedMessage] = useState<string>('');
@@ -286,6 +292,49 @@ export const AdminView: React.FC = () => {
   };
 
   // -------------------------------------------------------------
+  // ROOMS HANDLERS
+  // -------------------------------------------------------------
+  const handleOpenCreateRoom = () => {
+    setEditingRoom({
+      name: `Sala ${rooms.length + 1}`,
+      type: '2D Estándar',
+      capacity: 25,
+      soundSystem: 'Surround 7.1 HD Multicanal'
+    });
+    setIsRoomModalOpen(true);
+  };
+
+  const handleOpenEditRoom = (room: Room) => {
+    setEditingRoom(room);
+    setIsRoomModalOpen(true);
+  };
+
+  const handleSaveRoom = async (roomToSave: Room) => {
+    await cinemaStorage.saveRoom(roomToSave);
+    setRooms(cinemaStorage.getRooms());
+    setIsRoomModalOpen(false);
+  };
+
+  const handleDeleteRoom = async (id: string, name: string) => {
+    if (rooms.length <= 1) {
+      alert('No puedes eliminar la única sala del sistema. Debe existir al menos una sala activa.');
+      return;
+    }
+    const hasShowtimes = showtimes.some(s => s.roomId === id);
+    if (hasShowtimes) {
+      if (!confirm(`La sala "${name}" tiene funciones programadas. ¿Estás seguro de que deseas eliminarla?`)) {
+        return;
+      }
+    } else {
+      if (!confirm(`¿Estás seguro de eliminar la sala "${name}"?`)) {
+        return;
+      }
+    }
+    await cinemaStorage.deleteRoom(id);
+    setRooms(cinemaStorage.getRooms());
+  };
+
+  // -------------------------------------------------------------
   // PRICING HANDLERS
   // -------------------------------------------------------------
   const handlePriceInputChange = (type: string, value: string) => {
@@ -347,7 +396,7 @@ export const AdminView: React.FC = () => {
 
           <div className="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-800">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Sala Única (VIP 25 Butacas)</span>
+            <span>{rooms.length} Sala{rooms.length === 1 ? '' : 's'} Registrada{rooms.length === 1 ? '' : 's'}</span>
           </div>
         </div>
 
@@ -387,6 +436,18 @@ export const AdminView: React.FC = () => {
           >
             <Clock className="w-4 h-4" />
             <span>Horarios & Funciones ({showtimes.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('rooms')}
+            className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
+              activeTab === 'rooms'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+            }`}
+          >
+            <Tv className="w-4 h-4" />
+            <span>Salas de Cine ({rooms.length})</span>
           </button>
 
           <button
@@ -446,6 +507,16 @@ export const AdminView: React.FC = () => {
           />
         )}
 
+        {activeTab === 'rooms' && (
+          <AdminRoomsTab
+            rooms={rooms}
+            showtimes={showtimes}
+            onOpenCreateRoom={handleOpenCreateRoom}
+            onOpenEditRoom={handleOpenEditRoom}
+            onDeleteRoom={handleDeleteRoom}
+          />
+        )}
+
         {activeTab === 'pricing' && (
           <AdminPricingTab
             pricing={pricing}
@@ -492,6 +563,13 @@ export const AdminView: React.FC = () => {
         rooms={rooms}
         onClose={() => setIsShowtimeModalOpen(false)}
         onSave={handleSaveShowtime}
+      />
+
+      <RoomModal
+        isOpen={isRoomModalOpen}
+        initialRoom={editingRoom}
+        onClose={() => setIsRoomModalOpen(false)}
+        onSave={handleSaveRoom}
       />
 
     </div>

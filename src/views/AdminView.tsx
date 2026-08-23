@@ -2,7 +2,35 @@ import React, { useState, useEffect } from 'react';
 import { Movie, Showtime, Room, PricingTier, MovieRating, MovieStatus, Sale, HeroSlide } from '../core/types';
 import { cinemaStorage } from '../services/storage/cinemaStorage';
 import { sanitizeInput } from '../core/security/crypto';
-import { Film, Clock, Calendar, DollarSign, Database, Plus, Trash2, Edit, Check, AlertCircle, RefreshCw, BarChart3, Sparkles, Eye, EyeOff, ArrowUp, ArrowDown, Image as ImageIcon, Sliders } from 'lucide-react';
+import { tmdbApi, TmdbSearchResult } from '../services/api/cinemaApi';
+import {
+  Film,
+  Clock,
+  Calendar,
+  DollarSign,
+  Database,
+  Plus,
+  Trash2,
+  Edit,
+  Check,
+  AlertCircle,
+  RefreshCw,
+  BarChart3,
+  Sparkles,
+  Eye,
+  EyeOff,
+  ArrowUp,
+  ArrowDown,
+  Image as ImageIcon,
+  Sliders,
+  Search,
+  Loader2,
+  Globe,
+  Star,
+  Download,
+  Play,
+  CheckCircle2,
+} from 'lucide-react';
 
 export const AdminView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'movies' | 'showtimes' | 'hero' | 'pricing' | 'audit'>('hero');
@@ -25,8 +53,21 @@ export const AdminView: React.FC = () => {
     genre: ['Acción'],
     posterUrl: '',
     backdropUrl: '',
-    status: 'CARTELERA'
+    status: 'CARTELERA',
+    director: '',
+    trailerUrl: '',
   });
+
+  // TMDB Integration States
+  const [tmdbSearchQuery, setTmdbSearchQuery] = useState<string>('');
+  const [isSearchingTmdb, setIsSearchingTmdb] = useState<boolean>(false);
+  const [tmdbSearchResults, setTmdbSearchResults] = useState<TmdbSearchResult[]>([]);
+  const [isTmdbExploreOpen, setIsTmdbExploreOpen] = useState<boolean>(false);
+  const [tmdbExploreTab, setTmdbExploreTab] = useState<'now-playing' | 'popular'>('now-playing');
+  const [tmdbExploreList, setTmdbExploreList] = useState<TmdbSearchResult[]>([]);
+  const [isLoadingExplore, setIsLoadingExplore] = useState<boolean>(false);
+  const [importSuccessMessage, setImportSuccessMessage] = useState<string>('');
+
 
   // Showtime Form State
   const [isShowtimeModalOpen, setIsShowtimeModalOpen] = useState<boolean>(false);
@@ -119,6 +160,77 @@ export const AdminView: React.FC = () => {
       cinemaStorage.deleteMovie(id);
     }
   };
+
+  // --- TMDB Handlers ---
+  const handleSearchTmdb = async (query: string) => {
+    if (!query.trim()) return;
+    setIsSearchingTmdb(true);
+    try {
+      const results = await tmdbApi.search(query);
+      setTmdbSearchResults(results);
+    } catch (err: any) {
+      console.warn('TMDB search error:', err.message);
+      setTmdbSearchResults([]);
+    } finally {
+      setIsSearchingTmdb(false);
+    }
+  };
+
+  const handleSelectTmdbMovie = async (tmdbId: number) => {
+    setIsSearchingTmdb(true);
+    try {
+      const details = await tmdbApi.getDetails(tmdbId);
+      if (details) {
+        setEditingMovie(prev => ({
+          ...prev,
+          title: details.title,
+          originalTitle: details.originalTitle,
+          synopsis: details.synopsis,
+          durationMinutes: details.durationMinutes,
+          rating: details.rating,
+          genre: details.genres.length > 0 ? details.genres : ['Acción'],
+          posterUrl: details.posterUrl,
+          backdropUrl: details.backdropUrl,
+          director: details.director || '',
+          trailerUrl: details.trailerUrl || '',
+        }));
+        setTmdbSearchResults([]);
+        setTmdbSearchQuery('');
+      }
+    } catch (err: any) {
+      console.warn('Error fetching TMDB details:', err.message);
+    } finally {
+      setIsSearchingTmdb(false);
+    }
+  };
+
+  const handleLoadExploreTmdb = async (tab: 'now-playing' | 'popular') => {
+    setTmdbExploreTab(tab);
+    setIsLoadingExplore(true);
+    try {
+      const data = tab === 'now-playing' ? await tmdbApi.getNowPlaying() : await tmdbApi.getPopular();
+      setTmdbExploreList(data);
+    } catch (err: any) {
+      console.warn('Error loading TMDB explore:', err.message);
+      setTmdbExploreList([]);
+    } finally {
+      setIsLoadingExplore(false);
+    }
+  };
+
+  const handleDirectImportTmdb = async (tmdbId: number, status: MovieStatus = 'CARTELERA') => {
+    try {
+      const imported = await tmdbApi.importMovie(tmdbId, status);
+      if (imported) {
+        cinemaStorage.saveMovie(imported);
+        setImportSuccessMessage(`¡"${imported.title}" importada con éxito!`);
+        setTimeout(() => setImportSuccessMessage(''), 4000);
+      }
+    } catch (err: any) {
+      alert('No se pudo importar la película: ' + err.message);
+    }
+  };
+
 
   // --- Showtime Handlers ---
   const handleSaveShowtime = (e: React.FormEvent) => {
@@ -525,29 +637,61 @@ export const AdminView: React.FC = () => {
         {/* ========================================================= */}
         {activeTab === 'movies' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-base font-bold text-white">Catálogo de Películas</h2>
-              <button
-                onClick={() => {
-                  setEditingMovie({
-                    title: '',
-                    originalTitle: '',
-                    synopsis: '',
-                    durationMinutes: 120,
-                    rating: 'APT',
-                    genre: ['Acción', 'Aventura'],
-                    posterUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop',
-                    backdropUrl: '',
-                    status: 'CARTELERA'
-                  });
-                  setIsMovieModalOpen(true);
-                }}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors shadow-md"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Agregar Película</span>
-              </button>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                  <Film className="w-5 h-5 text-amber-400" />
+                  <span>Catálogo de Películas</span>
+                </h2>
+                <p className="text-xs text-slate-400">Administra los títulos de cartelera y próximos estrenos</p>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setIsTmdbExploreOpen(true);
+                    handleLoadExploreTmdb('now-playing');
+                  }}
+                  className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors shadow-md"
+                >
+                  <Globe className="w-4 h-4 text-cyan-400" />
+                  <span>Explorar en TMDB</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setEditingMovie({
+                      title: '',
+                      originalTitle: '',
+                      synopsis: '',
+                      durationMinutes: 120,
+                      rating: 'APT',
+                      genre: ['Acción', 'Aventura'],
+                      posterUrl: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=800&auto=format&fit=crop',
+                      backdropUrl: '',
+                      status: 'CARTELERA',
+                      director: '',
+                      trailerUrl: '',
+                    });
+                    setTmdbSearchResults([]);
+                    setTmdbSearchQuery('');
+                    setIsMovieModalOpen(true);
+                  }}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors shadow-md shadow-amber-500/20"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Agregar Película</span>
+                </button>
+              </div>
             </div>
+
+            {importSuccessMessage && (
+              <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{importSuccessMessage}</span>
+              </div>
+            )}
+
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {movies.map((m) => (
@@ -937,35 +1081,131 @@ export const AdminView: React.FC = () => {
       )}
 
       {/* ========================================================= */}
-      {/* MODAL: ADD / EDIT MOVIE */}
+      {/* MODAL: ADD / EDIT MOVIE WITH TMDB AUTO-FILL */}
       {/* ========================================================= */}
       {isMovieModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4">
-            <h3 className="text-lg font-bold text-white font-sans">
-              {editingMovie.id ? 'Editar Película' : 'Agregar Nueva Película'}
-            </h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-xl w-full p-6 sm:p-7 space-y-5 shadow-2xl my-8">
             
-            <form onSubmit={handleSaveMovie} className="space-y-3 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
-                <label className="text-slate-300 font-semibold block mb-1">Título:</label>
-                <input
-                  type="text"
-                  required
-                  value={editingMovie.title || ''}
-                  onChange={(e) => setEditingMovie({ ...editingMovie, title: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg outline-none focus:border-amber-400"
-                />
+                <h3 className="text-lg font-black text-white font-sans flex items-center gap-2">
+                  <Film className="w-5 h-5 text-amber-400" />
+                  <span>{editingMovie.id ? 'Editar Película' : 'Agregar Nueva Película'}</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">Ingresa los datos manualmente o usa el buscador inteligente de TMDB</p>
+              </div>
+              <button
+                onClick={() => setIsMovieModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* TMDB Autocomplete Search Bar */}
+            <div className="bg-slate-950/80 border border-cyan-500/30 rounded-2xl p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-cyan-400 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5 text-cyan-400 animate-pulse" />
+                  Búsqueda en TheMovieDB (Auto-completar 1-Clic)
+                </span>
+                <span className="text-[10px] text-slate-400">Póster HD, Sinopsis, Duración</span>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={tmdbSearchQuery}
+                    onChange={(e) => setTmdbSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSearchTmdb(tmdbSearchQuery);
+                      }
+                    }}
+                    placeholder="Escribe el nombre (ej. Avatar, Gladiador, Dune...)"
+                    className="w-full bg-slate-900 border border-slate-700 pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 rounded-xl outline-none focus:border-cyan-400"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSearchTmdb(tmdbSearchQuery)}
+                  disabled={isSearchingTmdb || !tmdbSearchQuery.trim()}
+                  className="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 disabled:opacity-50 text-white font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
+                >
+                  {isSearchingTmdb ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                  <span>Buscar</span>
+                </button>
+              </div>
+
+              {/* TMDB Dropdown Results */}
+              {tmdbSearchResults.length > 0 && (
+                <div className="max-h-48 overflow-y-auto space-y-1.5 pt-1 pr-1">
+                  {tmdbSearchResults.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => handleSelectTmdbMovie(t.id)}
+                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 rounded-xl flex items-center gap-2.5 cursor-pointer transition-colors"
+                    >
+                      <img
+                        src={t.posterUrl}
+                        alt={t.title}
+                        className="w-8 h-12 object-cover rounded-lg bg-slate-950 shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <h4 className="text-xs font-bold text-white truncate">{t.title}</h4>
+                          <span className="text-[10px] text-amber-400 font-bold shrink-0">⭐ {t.voteAverage.toFixed(1)}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                          {t.releaseDate ? t.releaseDate.split('-')[0] : 'Estreno'} • {t.overview || 'Sin descripción'}
+                        </p>
+                      </div>
+                      <span className="px-2 py-1 bg-cyan-500/20 text-cyan-300 text-[10px] font-bold rounded-lg shrink-0">
+                        Usar
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Form */}
+            <form onSubmit={handleSaveMovie} className="space-y-3.5 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-1">Título:</label>
+                  <input
+                    type="text"
+                    required
+                    value={editingMovie.title || ''}
+                    onChange={(e) => setEditingMovie({ ...editingMovie, title: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-1">Título Original (Opcional):</label>
+                  <input
+                    type="text"
+                    value={editingMovie.originalTitle || ''}
+                    onChange={(e) => setEditingMovie({ ...editingMovie, originalTitle: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
+                  />
+                </div>
               </div>
 
               <div>
-                <label className="text-slate-300 font-semibold block mb-1">Sinopsis:</label>
+                <label className="text-slate-300 font-semibold block mb-1">Sinopsis Oficial:</label>
                 <textarea
                   required
                   rows={3}
                   value={editingMovie.synopsis || ''}
                   onChange={(e) => setEditingMovie({ ...editingMovie, synopsis: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-lg outline-none focus:border-amber-400"
+                  className="w-full bg-slate-950 border border-slate-700 text-white p-2.5 rounded-xl outline-none focus:border-amber-400"
                 />
               </div>
 
@@ -976,7 +1216,7 @@ export const AdminView: React.FC = () => {
                     type="number"
                     value={editingMovie.durationMinutes !== undefined ? editingMovie.durationMinutes : ''}
                     onChange={(e) => setEditingMovie({ ...editingMovie, durationMinutes: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-mono"
                   />
                 </div>
                 <div>
@@ -984,7 +1224,7 @@ export const AdminView: React.FC = () => {
                   <select
                     value={editingMovie.rating || 'APT'}
                     onChange={(e) => setEditingMovie({ ...editingMovie, rating: e.target.value as MovieRating })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-semibold"
                   >
                     <option value="APT">APT (Todo Público)</option>
                     <option value="14+">14+</option>
@@ -996,44 +1236,160 @@ export const AdminView: React.FC = () => {
                   <select
                     value={editingMovie.status || 'CARTELERA'}
                     onChange={(e) => setEditingMovie({ ...editingMovie, status: e.target.value as MovieStatus })}
-                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl font-semibold"
                   >
                     <option value="CARTELERA">En Cartelera</option>
                     <option value="PROXIMAMENTE">Próximamente</option>
+                    <option value="ARCHIVADA">Archivada</option>
                   </select>
                 </div>
               </div>
 
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">URL de Póster (Imagen):</label>
-                <input
-                  type="url"
-                  value={editingMovie.posterUrl || ''}
-                  onChange={(e) => setEditingMovie({ ...editingMovie, posterUrl: e.target.value })}
-                  placeholder="https://..."
-                  className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-lg"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-1">URL de Póster (Vertical HD):</label>
+                  <input
+                    type="url"
+                    value={editingMovie.posterUrl || ''}
+                    onChange={(e) => setEditingMovie({ ...editingMovie, posterUrl: e.target.value })}
+                    placeholder="https://image.tmdb.org/..."
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-xs font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-1">URL de Fondo (Backdrop HD):</label>
+                  <input
+                    type="url"
+                    value={editingMovie.backdropUrl || ''}
+                    onChange={(e) => setEditingMovie({ ...editingMovie, backdropUrl: e.target.value })}
+                    placeholder="https://image.tmdb.org/..."
+                    className="w-full bg-slate-950 border border-slate-700 text-white p-2 rounded-xl text-xs font-mono"
+                  />
+                </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800">
+              <div className="flex justify-end gap-2 pt-4 border-t border-slate-800">
                 <button
                   type="button"
                   onClick={() => setIsMovieModalOpen(false)}
-                  className="px-4 py-2 border border-slate-700 rounded-lg text-slate-300 font-semibold"
+                  className="px-4 py-2.5 border border-slate-700 hover:bg-slate-800 rounded-xl text-slate-300 font-semibold"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg font-bold"
+                  className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black rounded-xl shadow-lg shadow-amber-500/20"
                 >
-                  Guardar
+                  Guardar Película
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* ========================================================= */}
+      {/* MODAL: TMDB WORLDWIDE EXPLORER & 1-CLICK IMPORT */}
+      {/* ========================================================= */}
+      {isTmdbExploreOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="bg-slate-900 border border-slate-700/80 rounded-3xl max-w-4xl w-full p-6 sm:p-7 space-y-5 shadow-2xl my-8">
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <h3 className="text-lg font-black text-white font-sans flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-cyan-400" />
+                  <span>Explorador de Estrenos y Cartelera Mundial (TMDB)</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">Explora títulos mundiales e impórtalos a Cines Argón con 1 solo clic</p>
+              </div>
+              <button
+                onClick={() => setIsTmdbExploreOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex gap-2 border-b border-slate-800 pb-3">
+              <button
+                onClick={() => handleLoadExploreTmdb('now-playing')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                  tmdbExploreTab === 'now-playing'
+                    ? 'bg-cyan-500 text-slate-950'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                🍿 En Cines / Cartelera Actual
+              </button>
+              <button
+                onClick={() => handleLoadExploreTmdb('popular')}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors ${
+                  tmdbExploreTab === 'popular'
+                    ? 'bg-cyan-500 text-slate-950'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                🔥 Más Populares del Momento
+              </button>
+            </div>
+
+            {/* List */}
+            {isLoadingExplore ? (
+              <div className="py-16 text-center text-slate-400 space-y-2">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto text-cyan-400" />
+                <p className="text-xs">Consultando base de datos de TheMovieDB...</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto pr-1">
+                {tmdbExploreList.map((movie) => (
+                  <div
+                    key={movie.id}
+                    className="bg-slate-950 border border-slate-800 rounded-2xl p-3 flex flex-col justify-between space-y-3 hover:border-slate-700 transition-colors"
+                  >
+                    <div className="flex gap-3">
+                      <img
+                        src={movie.posterUrl}
+                        alt={movie.title}
+                        className="w-16 h-24 object-cover rounded-xl bg-slate-900 shrink-0 shadow-md"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-amber-400 font-bold">⭐ {movie.voteAverage.toFixed(1)}</span>
+                          <span className="text-[10px] text-slate-500">{movie.releaseDate ? movie.releaseDate.split('-')[0] : ''}</span>
+                        </div>
+                        <h4 className="text-xs font-bold text-white mt-1 line-clamp-2">{movie.title}</h4>
+                        <p className="text-[10px] text-slate-400 mt-1 line-clamp-3 leading-relaxed">
+                          {movie.overview || 'Sin descripción disponible.'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-1.5 pt-1 border-t border-slate-900">
+                      <button
+                        onClick={() => handleDirectImportTmdb(movie.id, 'CARTELERA')}
+                        className="flex-1 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-[11px] rounded-lg flex items-center justify-center gap-1 shadow-md"
+                      >
+                        <Download className="w-3 h-3" />
+                        <span>A Cartelera</span>
+                      </button>
+                      <button
+                        onClick={() => handleDirectImportTmdb(movie.id, 'PROXIMAMENTE')}
+                        className="py-1.5 px-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-[11px] rounded-lg"
+                      >
+                        Próximamente
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
 
       {/* ========================================================= */}
       {/* MODAL: ADD SHOWTIME */}

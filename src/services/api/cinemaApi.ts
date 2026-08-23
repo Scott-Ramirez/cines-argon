@@ -14,6 +14,33 @@ import {
   MovieStatus,
 } from '../../core/types';
 
+export interface TmdbSearchResult {
+  id: number;
+  title: string;
+  originalTitle: string;
+  overview: string;
+  releaseDate: string;
+  posterUrl: string;
+  backdropUrl: string;
+  voteAverage: number;
+  genreIds: number[];
+}
+
+export interface TmdbMovieDetails {
+  id: number;
+  title: string;
+  originalTitle: string;
+  synopsis: string;
+  durationMinutes: number;
+  rating: 'APT' | '14+' | '18+' | 'TE';
+  genres: string[];
+  posterUrl: string;
+  backdropUrl: string;
+  trailerUrl?: string;
+  director?: string;
+  releaseDate: string;
+}
+
 export const authApi = {
   login: (username: string, password?: string) =>
     apiClient.post<{ accessToken: string; user: User }>('/auth/login', { username, password }),
@@ -33,6 +60,29 @@ export const moviesApi = {
   createMovie: (data: Partial<Movie>) => apiClient.post<Movie>('/movies', data),
   updateMovie: (id: string, data: Partial<Movie>) => apiClient.put<Movie>(`/movies/${id}`, data),
   deleteMovie: (id: string) => apiClient.delete<{ success: boolean; message: string }>(`/movies/${id}`),
+};
+
+export const tmdbApi = {
+  search: (query: string, language: string = 'es-MX') => {
+    const params = new URLSearchParams({ query, language });
+    return apiClient.get<TmdbSearchResult[]>(`/tmdb/search?${params.toString()}`);
+  },
+  getNowPlaying: (language: string = 'es-MX') => {
+    const params = new URLSearchParams({ language });
+    return apiClient.get<TmdbSearchResult[]>(`/tmdb/now-playing?${params.toString()}`);
+  },
+  getPopular: (language: string = 'es-MX') => {
+    const params = new URLSearchParams({ language });
+    return apiClient.get<TmdbSearchResult[]>(`/tmdb/popular?${params.toString()}`);
+  },
+  getDetails: (tmdbId: number | string, language: string = 'es-MX') => {
+    const params = new URLSearchParams({ language });
+    return apiClient.get<TmdbMovieDetails>(`/tmdb/details/${tmdbId}?${params.toString()}`);
+  },
+  importMovie: (tmdbId: number | string, status: MovieStatus = 'CARTELERA', language: string = 'es-MX') => {
+    const params = new URLSearchParams({ language });
+    return apiClient.post<Movie>(`/tmdb/import/${tmdbId}?${params.toString()}`, { status });
+  },
 };
 
 export const roomsApi = {

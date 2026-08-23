@@ -462,8 +462,14 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
       {/* MODAL: CINEMA MOVIE DETAIL (Cineplanet / Cinemark Style) */}
       {/* ========================================================= */}
       {selectedMovie && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-hidden animate-fade-in">
-          <div className="bg-[#0c1017] border border-slate-700/80 rounded-3xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in text-slate-100">
+        <div 
+          onClick={() => setSelectedMovie(null)}
+          className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md p-3 sm:p-6 flex min-h-full items-center justify-center animate-fade-in"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-[#0c1017] border border-slate-700/80 rounded-3xl max-w-3xl w-full max-h-[86vh] flex flex-col shadow-2xl overflow-hidden my-auto animate-scale-in text-slate-100"
+          >
             
             {/* Header with Title and Close Button */}
             <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 shrink-0 bg-[#0c1017]">
@@ -475,21 +481,21 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
               </div>
               <button
                 onClick={() => setSelectedMovie(null)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="w-8 h-8 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center text-sm font-bold transition-colors"
               >
                 ✕
               </button>
             </div>
 
             {/* Scrollable Modal Body */}
-            <div className="p-5 sm:p-6 space-y-6 overflow-y-auto flex-1">
+            <div className="p-4 sm:p-6 space-y-5 overflow-y-auto flex-1 min-h-0">
               
               {/* Top Section: Poster + Movie Details */}
-              <div className="flex flex-col sm:flex-row gap-5 sm:gap-6">
+              <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start">
                 
                 {/* Poster with DOB ribbon & Ver Trailer under */}
-                <div className="shrink-0 flex flex-col items-center sm:items-start gap-3">
-                  <div className="relative w-40 sm:w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl bg-slate-950 border border-slate-800 group">
+                <div className="shrink-0 w-32 sm:w-44 flex flex-col gap-2.5 mx-auto sm:mx-0">
+                  <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden shadow-2xl bg-slate-950 border border-slate-800 group">
                     <img
                       src={selectedMovie.posterUrl}
                       alt={selectedMovie.title}
@@ -498,7 +504,7 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
 
                     {/* DOB / SUB Ribbon Badge */}
                     <div className="absolute top-0 left-0">
-                      <div className="bg-rose-600 text-white font-black text-[10px] px-3 py-1 shadow-lg uppercase tracking-wider rounded-br-xl">
+                      <div className="bg-rose-600 text-white font-black text-[10px] px-2.5 py-0.5 shadow-lg uppercase tracking-wider rounded-br-lg">
                         DOB
                       </div>
                     </div>
@@ -513,19 +519,19 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
                   {selectedMovie.trailerUrl && (
                     <button
                       onClick={() => setTrailerUrlToPlay(selectedMovie.trailerUrl || null)}
-                      className="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/40 rounded-xl text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition-all shadow-md"
+                      className="w-full py-1.5 px-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/40 rounded-xl text-[11px] font-bold text-amber-400 flex items-center justify-center gap-1.5 transition-all shadow-md"
                     >
-                      <Play className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      <span>Ver tráiler oficial</span>
+                      <Play className="w-3 h-3 fill-amber-400 text-amber-400" />
+                      <span>Ver tráiler</span>
                     </button>
                   )}
                 </div>
 
                 {/* Movie Info Column */}
-                <div className="flex-1 space-y-3">
+                <div className="flex-1 space-y-2.5 w-full">
                   
                   {/* Title */}
-                  <h2 className="text-xl sm:text-2xl font-black text-white font-sans uppercase tracking-tight">
+                  <h2 className="text-lg sm:text-2xl font-black text-white font-sans uppercase tracking-tight leading-snug">
                     {selectedMovie.title} {selectedMovie.title.toUpperCase().includes('(DOB)') ? '' : '(DOB)'}
                   </h2>
 
@@ -555,15 +561,15 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
                   </div>
 
                   {/* Synopsis with Ver Más / Ver Menos */}
-                  <div className="pt-2">
-                    <p className={`text-xs sm:text-sm text-slate-300 leading-relaxed ${!isSynopsisExpanded ? 'line-clamp-4' : ''}`}>
+                  <div className="pt-1.5 space-y-1">
+                    <p className={`text-xs sm:text-sm text-slate-300 leading-relaxed ${!isSynopsisExpanded ? 'line-clamp-4 sm:line-clamp-5' : ''}`}>
                       {selectedMovie.synopsis}
                     </p>
                     
                     {selectedMovie.synopsis && selectedMovie.synopsis.length > 180 && (
                       <button
                         onClick={() => setIsSynopsisExpanded(!isSynopsisExpanded)}
-                        className="mt-2 text-xs font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-2.5 py-1 rounded transition-colors inline-block"
+                        className="text-xs font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-2 py-0.5 rounded transition-colors inline-block"
                       >
                         {isSynopsisExpanded ? 'Ver menos' : 'Ver más'}
                       </button>
@@ -572,7 +578,7 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
 
                   {/* Ver Trailer link icon (styled exactly as Cineplanet reference) */}
                   {selectedMovie.trailerUrl && (
-                    <div className="pt-2">
+                    <div className="pt-1">
                       <button
                         onClick={() => setTrailerUrlToPlay(selectedMovie.trailerUrl || null)}
                         className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1.5 group transition-colors"
@@ -588,7 +594,7 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
 
               {/* Bottom Section: Horarios y Funciones de la Película */}
               {selectedMovie.status === 'CARTELERA' && (
-                <div className="border-t border-slate-800 pt-5 space-y-3">
+                <div className="border-t border-slate-800 pt-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="text-sm font-bold text-white flex items-center gap-2">
@@ -597,7 +603,7 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
                       </h4>
                       <p className="text-xs text-slate-400">Funciones para el día de hoy en Cines Argón</p>
                     </div>
-                    <span className="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-lg">
+                    <span className="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg">
                       Sala VIP Premium
                     </span>
                   </div>
@@ -658,8 +664,14 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
       {/* MODAL: YOUTUBE TRAILER POPUP PLAYER */}
       {/* ========================================================= */}
       {trailerUrlToPlay && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
-          <div className="relative w-full max-w-4xl bg-black border border-slate-800 rounded-3xl overflow-hidden shadow-2xl aspect-video">
+        <div 
+          onClick={() => setTrailerUrlToPlay(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in"
+        >
+          <div 
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-4xl bg-black border border-slate-800 rounded-3xl overflow-hidden shadow-2xl aspect-video"
+          >
             <button
               onClick={() => setTrailerUrlToPlay(null)}
               className="absolute top-4 right-4 z-10 w-9 h-9 bg-slate-900/80 hover:bg-slate-800 text-white rounded-full flex items-center justify-center text-sm font-bold backdrop-blur border border-slate-700 transition-colors"

@@ -55,6 +55,7 @@ export interface Showtime {
 }
 
 export interface PricingTier {
+  id?: string;
   type: TicketType;
   label: string;
   description: string;

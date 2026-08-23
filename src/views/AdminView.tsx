@@ -68,6 +68,13 @@ export const AdminView: React.FC = () => {
   const [isLoadingExplore, setIsLoadingExplore] = useState<boolean>(false);
   const [importSuccessMessage, setImportSuccessMessage] = useState<string>('');
 
+  // Hero TMDB Search State
+  const [heroTmdbSearchQuery, setHeroTmdbSearchQuery] = useState<string>('');
+  const [isSearchingHeroTmdb, setIsSearchingHeroTmdb] = useState<boolean>(false);
+  const [heroTmdbResults, setHeroTmdbResults] = useState<TmdbSearchResult[]>([]);
+
+  // Pricing Toast State
+  const [pricingSavedMessage, setPricingSavedMessage] = useState<string>('');
 
   // Showtime Form State
   const [isShowtimeModalOpen, setIsShowtimeModalOpen] = useState<boolean>(false);
@@ -258,6 +265,48 @@ export const AdminView: React.FC = () => {
     }
   };
 
+  // --- Hero Slide TMDB Handlers ---
+  const handleSearchHeroTmdb = async (query: string) => {
+    if (!query.trim()) return;
+    setIsSearchingHeroTmdb(true);
+    try {
+      const results = await tmdbApi.search(query);
+      setHeroTmdbResults(results);
+    } catch (err: any) {
+      console.warn('Hero TMDB search error:', err.message);
+      setHeroTmdbResults([]);
+    } finally {
+      setIsSearchingHeroTmdb(false);
+    }
+  };
+
+  const handleSelectHeroTmdbMovie = async (tmdbId: number) => {
+    setIsSearchingHeroTmdb(true);
+    try {
+      const details = await tmdbApi.getDetails(tmdbId);
+      if (details) {
+        setEditingHeroSlide(prev => ({
+          ...prev,
+          title: details.title,
+          tagline: details.rating === 'APT' ? 'FUNCIÓN DE LA TARDE (FAMILIAR / NIÑOS)' : 'ESTRENO ESTELAR (+12 / ADULTOS)',
+          time: details.rating === 'APT' ? '5:30 PM' : '8:00 PM',
+          rating: details.rating,
+          durationMinutes: details.durationMinutes,
+          genres: details.genres.length > 0 ? details.genres : ['Cine'],
+          synopsis: details.synopsis,
+          backdropUrl: details.backdropUrl,
+          posterUrl: details.posterUrl,
+        }));
+        setHeroTmdbResults([]);
+        setHeroTmdbSearchQuery('');
+      }
+    } catch (err: any) {
+      console.warn('Error fetching TMDB details for hero:', err.message);
+    } finally {
+      setIsSearchingHeroTmdb(false);
+    }
+  };
+
   // --- Hero Slide Handlers ---
   const handlePopulateFromMovie = (movieId: string) => {
     const movie = movies.find(m => m.id === movieId);
@@ -370,6 +419,35 @@ export const AdminView: React.FC = () => {
       const fallback = pricing[index]?.basePrice ?? 0;
       setPriceInputs(prev => ({ ...prev, [type]: fallback.toString() }));
     }
+  };
+
+  const handleSaveAllPricing = async () => {
+    try {
+      await cinemaStorage.savePricing(pricing);
+      setPricingSavedMessage('✅ Tarifas y precios guardados con éxito en la base de datos');
+      setTimeout(() => setPricingSavedMessage(''), 4000);
+    } catch (err: any) {
+      alert('Error al guardar tarifas: ' + err.message);
+    }
+  };
+
+  const handleInitializeDefaultPricing = async () => {
+    const defaultTiers: PricingTier[] = [
+      { id: crypto.randomUUID(), type: 'GENERAL', label: 'Boleto General', description: 'Acceso para adultos', basePrice: 18.00 },
+      { id: crypto.randomUUID(), type: 'NINO', label: 'Niños (Hasta 11 años)', description: 'Tarifa infantil reducida', basePrice: 13.50 },
+      { id: crypto.randomUUID(), type: 'ADULTO_MAYOR', label: 'Adulto Mayor (60+)', description: 'Descuento con documento', basePrice: 13.50 },
+      { id: crypto.randomUUID(), type: 'PROMO_DUO', label: 'Promo Pareja (2x)', description: 'Paquete 2 entradas generales', basePrice: 30.00 },
+    ];
+    await cinemaStorage.savePricing(defaultTiers);
+    setPricing(defaultTiers);
+    setPriceInputs({
+      GENERAL: '18',
+      NINO: '13.5',
+      ADULTO_MAYOR: '13.5',
+      PROMO_DUO: '30',
+    });
+    setPricingSavedMessage('✅ Tarifas estándar inicializadas y guardadas en MySQL');
+    setTimeout(() => setPricingSavedMessage(''), 4000);
   };
 
   // --- Limpiar Cache y Re-sincronizar con MySQL ---
@@ -748,26 +826,32 @@ export const AdminView: React.FC = () => {
         {/* ========================================================= */}
         {activeTab === 'showtimes' && (
           <div className="space-y-4">
-            <div className="flex justify-between items-center">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
-                <h2 className="text-base font-bold text-white">Programación de Funciones</h2>
-                <p className="text-xs text-slate-400">Funciones vespertinas de 5:30 PM y estelares de 8:00 PM</p>
+                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-amber-400" />
+                  <span>Programación de Funciones</span>
+                </h2>
+                <p className="text-xs text-slate-400">Programa horarios de proyección para tus películas en cartelera</p>
               </div>
               <button
                 onClick={() => {
-                  if (movies.length > 0 && rooms.length > 0) {
-                    setNewShowtime({
-                      movieId: movies[0].id,
-                      roomId: rooms[0].id,
-                      date: new Date().toISOString().split('T')[0],
-                      startTime: '17:30',
-                      endTime: '19:50',
-                      availableSeats: rooms[0].capacity
-                    });
-                    setIsShowtimeModalOpen(true);
+                  if (movies.length === 0) {
+                    alert('⚠️ Para programar un horario, primero debes agregar o importar al menos una película en la pestaña de "Películas".');
+                    return;
                   }
+                  const defaultRoom = rooms.length > 0 ? rooms[0] : { id: '', name: 'Sala Única', capacity: 25 };
+                  setNewShowtime({
+                    movieId: movies[0].id,
+                    roomId: defaultRoom.id,
+                    date: new Date().toISOString().split('T')[0],
+                    startTime: '17:30',
+                    endTime: '19:50',
+                    availableSeats: defaultRoom.capacity
+                  });
+                  setIsShowtimeModalOpen(true);
                 }}
-                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors shadow-md"
+                className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors shadow-md shadow-amber-500/20"
               >
                 <Plus className="w-4 h-4" />
                 <span>Nueva Función</span>
@@ -819,30 +903,87 @@ export const AdminView: React.FC = () => {
         {/* ========================================================= */}
         {activeTab === 'pricing' && (
           <div className="space-y-4 max-w-3xl">
-            <h2 className="text-base font-bold text-white">Tarifas y Precios de Entrada</h2>
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
-              {pricing.map((p, idx) => (
-                <div key={p.type} className="flex items-center justify-between p-3 bg-slate-950 rounded-xl border border-slate-800">
-                  <div>
-                    <h3 className="font-bold text-sm text-white">{p.label}</h3>
-                    <p className="text-xs text-slate-400">{p.description}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-amber-400 font-mono font-bold">S/.</span>
-                    <input
-                      type="number"
-                      step="0.50"
-                      min="0"
-                      value={priceInputs[p.type] !== undefined ? priceInputs[p.type] : p.basePrice}
-                      onChange={(e) => handlePriceInputChange(idx, p.type, e.target.value)}
-                      onBlur={() => handlePriceInputBlur(idx, p.type)}
-                      placeholder="0.00"
-                      className="w-24 bg-slate-900 border border-slate-700 text-white font-mono font-bold text-sm px-3 py-1.5 rounded-lg outline-none focus:border-amber-400"
-                    />
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <h2 className="text-base font-bold text-white flex items-center gap-2">
+                  <DollarSign className="w-5 h-5 text-amber-400" />
+                  <span>Tarifas y Precios de Entrada</span>
+                </h2>
+                <p className="text-xs text-slate-400">Define los precios en Soles (S/.) para la taquilla y venta de boletos</p>
+              </div>
+
+              <div className="flex gap-2">
+                {pricing.length === 0 && (
+                  <button
+                    onClick={handleInitializeDefaultPricing}
+                    className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors border border-slate-700"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Inicializar Tarifas Estándar</span>
+                  </button>
+                )}
+                {pricing.length > 0 && (
+                  <button
+                    onClick={handleSaveAllPricing}
+                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-2 transition-colors shadow-md shadow-amber-500/20"
+                  >
+                    <Check className="w-4 h-4" />
+                    <span>Guardar Cambios</span>
+                  </button>
+                )}
+              </div>
             </div>
+
+            {pricingSavedMessage && (
+              <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 rounded-xl text-emerald-300 text-xs flex items-center gap-2 animate-fade-in">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>{pricingSavedMessage}</span>
+              </div>
+            )}
+
+            {pricing.length > 0 ? (
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+                {pricing.map((p, idx) => (
+                  <div key={p.type} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-slate-950 rounded-xl border border-slate-800 hover:border-slate-700 transition-colors">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-0.5 bg-slate-800 text-amber-400 font-mono font-bold text-[10px] rounded">
+                          {p.type}
+                        </span>
+                        <h3 className="font-bold text-sm text-white">{p.label}</h3>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">{p.description}</p>
+                    </div>
+                    <div className="flex items-center gap-2 self-end sm:self-center">
+                      <span className="text-xs text-amber-400 font-mono font-bold">S/.</span>
+                      <input
+                        type="number"
+                        step="0.50"
+                        min="0"
+                        value={priceInputs[p.type] !== undefined ? priceInputs[p.type] : p.basePrice}
+                        onChange={(e) => handlePriceInputChange(idx, p.type, e.target.value)}
+                        onBlur={() => handlePriceInputBlur(idx, p.type)}
+                        placeholder="0.00"
+                        className="w-28 bg-slate-900 border border-slate-700 text-white font-mono font-bold text-sm px-3 py-2 rounded-xl outline-none focus:border-amber-400 text-right"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-slate-900/40 rounded-2xl border border-dashed border-slate-800 space-y-3">
+                <DollarSign className="w-8 h-8 text-amber-400 mx-auto opacity-60" />
+                <p className="text-sm text-slate-300 font-bold">No hay tarifas configuradas</p>
+                <p className="text-xs text-slate-500">Pulsa el botón superior para cargar el tarifario estándar (General, Niño, Adulto Mayor, Promo Pareja).</p>
+                <button
+                  onClick={handleInitializeDefaultPricing}
+                  className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl inline-flex items-center gap-1.5 transition-colors"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Inicializar Tarifas Estándar</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -917,30 +1058,111 @@ export const AdminView: React.FC = () => {
                 <div className="w-8 h-8 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
                   <Sparkles className="w-4 h-4" />
                 </div>
-                <h3 className="text-lg font-black text-white font-sans">
-                  {editingHeroSlide.id ? 'Editar Diapositiva del Hero' : 'Nueva Diapositiva en Carrusel'}
-                </h3>
+                <div>
+                  <h3 className="text-lg font-black text-white font-sans">
+                    {editingHeroSlide.id ? 'Editar Diapositiva del Hero' : 'Nueva Diapositiva en Carrusel'}
+                  </h3>
+                  <p className="text-xs text-slate-400">Personaliza el banner de portada con tráiler y backdrop oficial</p>
+                </div>
               </div>
+              <button
+                onClick={() => setIsHeroModalOpen(false)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* TMDB Autocomplete Search Bar for Hero Slide */}
+            <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-3.5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                  Búsqueda en TheMovieDB (Auto-completar Banner HD y Datos)
+                </span>
+                <span className="text-[10px] text-slate-400">Backdrop 16:9 HD, Sinopsis</span>
+              </div>
+
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={heroTmdbSearchQuery}
+                    onChange={(e) => setHeroTmdbSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSearchHeroTmdb(heroTmdbSearchQuery);
+                      }
+                    }}
+                    placeholder="Escribe el nombre de la película para el banner..."
+                    className="w-full bg-slate-900 border border-slate-700 pl-9 pr-3 py-2 text-xs text-slate-100 placeholder-slate-500 rounded-xl outline-none focus:border-amber-400"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleSearchHeroTmdb(heroTmdbSearchQuery)}
+                  disabled={isSearchingHeroTmdb || !heroTmdbSearchQuery.trim()}
+                  className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
+                >
+                  {isSearchingHeroTmdb ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+                  <span>Buscar</span>
+                </button>
+              </div>
+
+              {/* TMDB Dropdown Results */}
+              {heroTmdbResults.length > 0 && (
+                <div className="max-h-44 overflow-y-auto space-y-1.5 pt-1 pr-1">
+                  {heroTmdbResults.map((t) => (
+                    <div
+                      key={t.id}
+                      onClick={() => handleSelectHeroTmdbMovie(t.id)}
+                      className="p-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-amber-500/50 rounded-xl flex items-center gap-2.5 cursor-pointer transition-colors"
+                    >
+                      <img
+                        src={t.backdropUrl || t.posterUrl}
+                        alt={t.title}
+                        className="w-14 h-8 object-cover rounded-lg bg-slate-950 shrink-0"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1">
+                          <h4 className="text-xs font-bold text-white truncate">{t.title}</h4>
+                          <span className="text-[10px] text-amber-400 font-bold shrink-0">⭐ {t.voteAverage.toFixed(1)}</span>
+                        </div>
+                        <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                          {t.releaseDate ? t.releaseDate.split('-')[0] : ''} • {t.overview || 'Sin descripción'}
+                        </p>
+                      </div>
+                      <span className="px-2 py-1 bg-amber-500/20 text-amber-300 text-[10px] font-bold rounded-lg shrink-0">
+                        Usar
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
             
             <form onSubmit={handleSaveHeroSlide} className="space-y-3.5 text-xs">
               
               {/* Quick autofill from existing movies */}
-              <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
-                <label className="text-amber-400 font-bold block mb-1.5 flex items-center gap-1 font-mono text-[11px]">
-                  <Film className="w-3 h-3" /> Autorellenar desde Película de Cartelera:
-                </label>
-                <select
-                  value={editingHeroSlide.movieId || ''}
-                  onChange={(e) => handlePopulateFromMovie(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 text-slate-200 p-2 rounded-lg text-xs"
-                >
-                  <option value="">-- Seleccionar Película para Autocompletar --</option>
-                  {movies.map(m => (
-                    <option key={m.id} value={m.id}>{m.title} ({m.rating})</option>
-                  ))}
-                </select>
-              </div>
+              {movies.length > 0 && (
+                <div className="bg-slate-900/90 border border-slate-800 p-3 rounded-xl">
+                  <label className="text-amber-400 font-bold block mb-1.5 flex items-center gap-1 font-mono text-[11px]">
+                    <Film className="w-3 h-3" /> O autorellenar desde Película de Cartelera:
+                  </label>
+                  <select
+                    value={editingHeroSlide.movieId || ''}
+                    onChange={(e) => handlePopulateFromMovie(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 text-slate-200 p-2 rounded-lg text-xs"
+                  >
+                    <option value="">-- Seleccionar Película para Autocompletar --</option>
+                    {movies.map(m => (
+                      <option key={m.id} value={m.id}>{m.title} ({m.rating})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>

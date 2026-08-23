@@ -2,6 +2,7 @@ import { Ticket, Sale, TicketType, ScanResult, ScanLog } from '../core/types';
 import { cinemaStorage } from './storage/cinemaStorage';
 import { generateTicketSignature, parseScannedPayload } from '../core/security/crypto';
 import { soundService } from './soundService';
+import { salesApi, validatorApi } from './api/cinemaApi';
 
 export interface CartItem {
   type: TicketType;
@@ -15,6 +16,35 @@ class TicketService {
     cashierName: string,
     paidAmount: number
   ): Promise<{ sale: Sale; tickets: Ticket[] }> {
+    // 1. Intentar procesar la venta a través de la API del Backend NestJS
+    try {
+      const response = await salesApi.processSale({
+        showtimeId,
+        items,
+        cashierName: cashierName || 'Taquilla 1',
+        paidAmount,
+      });
+
+      if (response && response.sale && response.tickets) {
+        // Actualizar cache local
+        cinemaStorage.saveSale(response.sale);
+        cinemaStorage.saveBatchTickets(response.tickets);
+
+        // Descontar aforo en showtimes locales
+        const showtimes = cinemaStorage.getShowtimes();
+        const st = showtimes.find(s => s.id === showtimeId);
+        if (st) {
+          st.availableSeats = Math.max(0, st.availableSeats - response.sale.totalTickets);
+          cinemaStorage.saveShowtime(st);
+        }
+
+        return response;
+      }
+    } catch (apiError: any) {
+      console.warn('API sale processing failed or offline, using local engine:', apiError.message);
+    }
+
+    // 2. Fallback al motor de ventas local (Offline/Demostración)
     const showtimes = cinemaStorage.getShowtimes();
     const showtime = showtimes.find(s => s.id === showtimeId);
     if (!showtime) throw new Error('Función no encontrada');
@@ -95,6 +125,44 @@ class TicketService {
 
   async validateTicket(rawScanString: string, scanType: 'USB_SCANNER' | 'CAMERA' | 'MANUAL' = 'USB_SCANNER'): Promise<ScanResult> {
     const timestamp = new Date().toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    // 1. Intentar validar el boleto a través del Backend NestJS
+    try {
+      const apiResult = await validatorApi.validateScan({
+        rawScanString,
+        scanType,
+        validatedBy: 'Portería Principal',
+      });
+
+      if (apiResult) {
+        if (apiResult.success) {
+          soundService.playSuccess();
+        } else {
+          soundService.playError();
+        }
+
+        // Actualizar tickets y logs en cache local
+        if (apiResult.ticket) {
+          cinemaStorage.saveTicket(apiResult.ticket);
+        }
+        const log: ScanLog = {
+          id: 'LOG-' + Date.now(),
+          ticketId: apiResult.ticket?.id || rawScanString,
+          timestamp,
+          result: apiResult.success ? 'VALID' : 'ALREADY_USED',
+          message: apiResult.reason,
+          movieTitle: apiResult.ticket?.movieTitle,
+          roomName: apiResult.ticket?.roomName,
+        };
+        cinemaStorage.addScanLog(log);
+
+        return apiResult;
+      }
+    } catch (apiError: any) {
+      console.warn('API ticket validation failed or offline, fallback to local validation:', apiError.message);
+    }
+
+    // 2. Fallback de validación local
     const parsed = parseScannedPayload(rawScanString);
     const ticketId = parsed.ticketId.trim();
 

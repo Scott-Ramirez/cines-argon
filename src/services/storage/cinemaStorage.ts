@@ -1,4 +1,14 @@
 import { Movie, Room, Showtime, Ticket, Sale, ScanLog, PricingTier, HeroSlide } from '../../core/types';
+import {
+  moviesApi,
+  roomsApi,
+  showtimesApi,
+  pricingApi,
+  heroSlidesApi,
+  salesApi,
+  ticketsApi,
+  validatorApi,
+} from '../api/cinemaApi';
 
 const STORAGE_KEYS = {
   MOVIES: 'argon_movies_v1',
@@ -90,14 +100,12 @@ const INITIAL_MOVIES: Movie[] = [
   }
 ];
 
-// Single Cinema Room (Home Cinema)
 const INITIAL_ROOMS: Room[] = [
   { id: 'room-1', name: 'Sala Única - Home Cinema Argón', type: 'VIP Premium', capacity: 25, soundSystem: 'Dolby Atmos 7.1.4 Surround' },
 ];
 
 const todayStr = new Date().toISOString().split('T')[0];
 
-// Restricted Home Cinema Schedule (5:30 PM afternoon, 8:00 PM evening)
 const INITIAL_SHOWTIMES: Showtime[] = [
   { id: 'st-1', movieId: 'mov-2', roomId: 'room-1', date: todayStr, startTime: '17:30', endTime: '19:50', availableSeats: 25 },
   { id: 'st-2', movieId: 'mov-1', roomId: 'room-1', date: todayStr, startTime: '20:00', endTime: '22:46', availableSeats: 25 },
@@ -144,6 +152,14 @@ const INITIAL_PRICING: PricingTier[] = [
 ];
 
 class CinemaStorageService {
+  private isSyncing = false;
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      setTimeout(() => this.syncFromBackend(), 100);
+    }
+  }
+
   private notifyChange(): void {
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('argon_storage_update'));
@@ -168,6 +184,53 @@ class CinemaStorageService {
     }
   }
 
+  async syncFromBackend(): Promise<void> {
+    if (this.isSyncing) return;
+    this.isSyncing = true;
+    try {
+      const [movies, rooms, showtimes, pricing, heroSlides, sales, tickets, scanLogs] =
+        await Promise.allSettled([
+          moviesApi.getMovies(),
+          roomsApi.getRooms(),
+          showtimesApi.getShowtimes(),
+          pricingApi.getPricing(),
+          heroSlidesApi.getHeroSlides(),
+          salesApi.getSales(),
+          ticketsApi.getTickets(),
+          validatorApi.getLogs(),
+        ]);
+
+      if (movies.status === 'fulfilled' && movies.value?.length) {
+        this.setItem(STORAGE_KEYS.MOVIES, movies.value);
+      }
+      if (rooms.status === 'fulfilled' && rooms.value?.length) {
+        this.setItem(STORAGE_KEYS.ROOMS, rooms.value);
+      }
+      if (showtimes.status === 'fulfilled' && showtimes.value?.length) {
+        this.setItem(STORAGE_KEYS.SHOWTIMES, showtimes.value);
+      }
+      if (pricing.status === 'fulfilled' && pricing.value?.length) {
+        this.setItem(STORAGE_KEYS.PRICING, pricing.value);
+      }
+      if (heroSlides.status === 'fulfilled' && heroSlides.value?.length) {
+        this.setItem(STORAGE_KEYS.HERO_SLIDES, heroSlides.value);
+      }
+      if (sales.status === 'fulfilled' && sales.value?.length) {
+        this.setItem(STORAGE_KEYS.SALES, sales.value);
+      }
+      if (tickets.status === 'fulfilled' && tickets.value?.length) {
+        this.setItem(STORAGE_KEYS.TICKETS, tickets.value);
+      }
+      if (scanLogs.status === 'fulfilled' && scanLogs.value?.length) {
+        this.setItem(STORAGE_KEYS.SCAN_LOGS, scanLogs.value);
+      }
+    } catch (err: any) {
+      console.warn('Backend sync failed or server offline:', err.message);
+    } finally {
+      this.isSyncing = false;
+    }
+  }
+
   getMovies(): Movie[] {
     const movies = this.getItem<Movie[]>(STORAGE_KEYS.MOVIES, []);
     if (!movies || movies.length === 0) {
@@ -177,7 +240,7 @@ class CinemaStorageService {
     return movies;
   }
 
-  saveMovie(movie: Movie): void {
+  async saveMovie(movie: Movie): Promise<void> {
     const movies = this.getMovies();
     const index = movies.findIndex(m => m.id === movie.id);
     if (index >= 0) {
@@ -186,11 +249,28 @@ class CinemaStorageService {
       movies.unshift(movie);
     }
     this.setItem(STORAGE_KEYS.MOVIES, movies);
+
+    // Sync to backend
+    try {
+      if (index >= 0) {
+        await moviesApi.updateMovie(movie.id, movie);
+      } else {
+        await moviesApi.createMovie(movie);
+      }
+    } catch (e: any) {
+      console.warn('Could not sync movie to backend:', e.message);
+    }
   }
 
-  deleteMovie(id: string): void {
+  async deleteMovie(id: string): Promise<void> {
     const movies = this.getMovies().filter(m => m.id !== id);
     this.setItem(STORAGE_KEYS.MOVIES, movies);
+
+    try {
+      await moviesApi.deleteMovie(id);
+    } catch (e: any) {
+      console.warn('Could not delete movie on backend:', e.message);
+    }
   }
 
   getRooms(): Room[] {
@@ -202,6 +282,38 @@ class CinemaStorageService {
     return rooms;
   }
 
+  async saveRoom(room: Room): Promise<void> {
+    const rooms = this.getRooms();
+    const index = rooms.findIndex(r => r.id === room.id);
+    if (index >= 0) {
+      rooms[index] = room;
+    } else {
+      rooms.push(room);
+    }
+    this.setItem(STORAGE_KEYS.ROOMS, rooms);
+
+    try {
+      if (index >= 0) {
+        await roomsApi.updateRoom(room.id, room);
+      } else {
+        await roomsApi.createRoom(room);
+      }
+    } catch (e: any) {
+      console.warn('Could not sync room to backend:', e.message);
+    }
+  }
+
+  async deleteRoom(id: string): Promise<void> {
+    const rooms = this.getRooms().filter(r => r.id !== id);
+    this.setItem(STORAGE_KEYS.ROOMS, rooms);
+
+    try {
+      await roomsApi.deleteRoom(id);
+    } catch (e: any) {
+      console.warn('Could not delete room on backend:', e.message);
+    }
+  }
+
   getShowtimes(): Showtime[] {
     const showtimes = this.getItem<Showtime[]>(STORAGE_KEYS.SHOWTIMES, []);
     if (!showtimes || showtimes.length === 0) {
@@ -211,7 +323,7 @@ class CinemaStorageService {
     return showtimes;
   }
 
-  saveShowtime(showtime: Showtime): void {
+  async saveShowtime(showtime: Showtime): Promise<void> {
     const showtimes = this.getShowtimes();
     const index = showtimes.findIndex(s => s.id === showtime.id);
     if (index >= 0) {
@@ -220,11 +332,27 @@ class CinemaStorageService {
       showtimes.push(showtime);
     }
     this.setItem(STORAGE_KEYS.SHOWTIMES, showtimes);
+
+    try {
+      if (index >= 0) {
+        await showtimesApi.updateShowtime(showtime.id, showtime);
+      } else {
+        await showtimesApi.createShowtime(showtime);
+      }
+    } catch (e: any) {
+      console.warn('Could not sync showtime to backend:', e.message);
+    }
   }
 
-  deleteShowtime(id: string): void {
+  async deleteShowtime(id: string): Promise<void> {
     const showtimes = this.getShowtimes().filter(s => s.id !== id);
     this.setItem(STORAGE_KEYS.SHOWTIMES, showtimes);
+
+    try {
+      await showtimesApi.deleteShowtime(id);
+    } catch (e: any) {
+      console.warn('Could not delete showtime on backend:', e.message);
+    }
   }
 
   getPricing(): PricingTier[] {
@@ -236,8 +364,14 @@ class CinemaStorageService {
     return pricing;
   }
 
-  savePricing(pricing: PricingTier[]): void {
+  async savePricing(pricing: PricingTier[]): Promise<void> {
     this.setItem(STORAGE_KEYS.PRICING, pricing);
+
+    try {
+      await pricingApi.savePricingBatch(pricing);
+    } catch (e: any) {
+      console.warn('Could not sync pricing to backend:', e.message);
+    }
   }
 
   getTickets(): Ticket[] {
@@ -293,7 +427,7 @@ class CinemaStorageService {
     return slides.sort((a, b) => a.order - b.order);
   }
 
-  saveHeroSlide(slide: HeroSlide): void {
+  async saveHeroSlide(slide: HeroSlide): Promise<void> {
     const slides = this.getHeroSlides();
     const index = slides.findIndex(s => s.id === slide.id);
     if (index >= 0) {
@@ -302,23 +436,45 @@ class CinemaStorageService {
       slides.push(slide);
     }
     this.setItem(STORAGE_KEYS.HERO_SLIDES, slides);
+
+    try {
+      if (index >= 0) {
+        await heroSlidesApi.updateHeroSlide(slide.id, slide);
+      } else {
+        await heroSlidesApi.createHeroSlide(slide);
+      }
+    } catch (e: any) {
+      console.warn('Could not sync hero slide to backend:', e.message);
+    }
   }
 
-  deleteHeroSlide(id: string): void {
+  async deleteHeroSlide(id: string): Promise<void> {
     const slides = this.getHeroSlides().filter(s => s.id !== id);
     this.setItem(STORAGE_KEYS.HERO_SLIDES, slides);
+
+    try {
+      await heroSlidesApi.deleteHeroSlide(id);
+    } catch (e: any) {
+      console.warn('Could not delete hero slide on backend:', e.message);
+    }
   }
 
-  toggleHeroSlideStatus(id: string): void {
+  async toggleHeroSlideStatus(id: string): Promise<void> {
     const slides = this.getHeroSlides();
     const slide = slides.find(s => s.id === id);
     if (slide) {
       slide.active = !slide.active;
       this.setItem(STORAGE_KEYS.HERO_SLIDES, slides);
     }
+
+    try {
+      await heroSlidesApi.toggleActive(id);
+    } catch (e: any) {
+      console.warn('Could not toggle hero slide on backend:', e.message);
+    }
   }
 
-  saveHeroSlides(slides: HeroSlide[]): void {
+  async saveHeroSlides(slides: HeroSlide[]): Promise<void> {
     this.setItem(STORAGE_KEYS.HERO_SLIDES, slides);
   }
 

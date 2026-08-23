@@ -1,0 +1,116 @@
+import { apiClient } from './apiClient';
+import {
+  Movie,
+  Room,
+  Showtime,
+  PricingTier,
+  HeroSlide,
+  Ticket,
+  Sale,
+  ScanLog,
+  ScanResult,
+  User,
+  TicketStatus,
+  MovieStatus,
+} from '../../core/types';
+
+export const authApi = {
+  login: (username: string, password?: string) =>
+    apiClient.post<{ accessToken: string; user: User }>('/auth/login', { username, password }),
+
+  registerAdmin: (data: { name: string; username: string; password: string; assignedTerminal?: string }) =>
+    apiClient.post<User>('/auth/register-admin', data),
+
+  getProfile: () => apiClient.get<User>('/auth/profile'),
+};
+
+export const moviesApi = {
+  getMovies: (status?: MovieStatus) => {
+    const query = status ? `?status=${status}` : '';
+    return apiClient.get<Movie[]>(`/movies${query}`);
+  },
+  getMovie: (id: string) => apiClient.get<Movie>(`/movies/${id}`),
+  createMovie: (data: Partial<Movie>) => apiClient.post<Movie>('/movies', data),
+  updateMovie: (id: string, data: Partial<Movie>) => apiClient.put<Movie>(`/movies/${id}`, data),
+  deleteMovie: (id: string) => apiClient.delete<{ success: boolean; message: string }>(`/movies/${id}`),
+};
+
+export const roomsApi = {
+  getRooms: () => apiClient.get<Room[]>('/rooms'),
+  getRoom: (id: string) => apiClient.get<Room>(`/rooms/${id}`),
+  createRoom: (data: Partial<Room>) => apiClient.post<Room>('/rooms', data),
+  updateRoom: (id: string, data: Partial<Room>) => apiClient.put<Room>(`/rooms/${id}`, data),
+  deleteRoom: (id: string) => apiClient.delete<{ success: boolean; message: string }>(`/rooms/${id}`),
+};
+
+export const showtimesApi = {
+  getShowtimes: (date?: string, movieId?: string) => {
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (movieId) params.append('movieId', movieId);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return apiClient.get<Showtime[]>(`/showtimes${query}`);
+  },
+  getShowtime: (id: string) => apiClient.get<Showtime>(`/showtimes/${id}`),
+  createShowtime: (data: Partial<Showtime>) => apiClient.post<Showtime>('/showtimes', data),
+  updateShowtime: (id: string, data: Partial<Showtime>) => apiClient.put<Showtime>(`/showtimes/${id}`, data),
+  deleteShowtime: (id: string) => apiClient.delete<{ success: boolean; message: string }>(`/showtimes/${id}`),
+};
+
+export const pricingApi = {
+  getPricing: () => apiClient.get<PricingTier[]>('/pricing'),
+  savePricingBatch: (tiers: PricingTier[]) => apiClient.put<PricingTier[]>('/pricing', { tiers }),
+  savePricingTier: (tier: PricingTier) => apiClient.post<PricingTier>('/pricing', tier),
+};
+
+export const heroSlidesApi = {
+  getHeroSlides: (activeOnly?: boolean) => {
+    const query = activeOnly ? '?activeOnly=true' : '';
+    return apiClient.get<HeroSlide[]>(`/hero-slides${query}`);
+  },
+  getHeroSlide: (id: string) => apiClient.get<HeroSlide>(`/hero-slides/${id}`),
+  createHeroSlide: (data: Partial<HeroSlide>) => apiClient.post<HeroSlide>('/hero-slides', data),
+  updateHeroSlide: (id: string, data: Partial<HeroSlide>) => apiClient.put<HeroSlide>(`/hero-slides/${id}`, data),
+  toggleActive: (id: string) => apiClient.patch<HeroSlide>(`/hero-slides/${id}/toggle`),
+  deleteHeroSlide: (id: string) => apiClient.delete<{ success: boolean; message: string }>(`/hero-slides/${id}`),
+};
+
+export const salesApi = {
+  getSales: () => apiClient.get<Sale[]>('/sales'),
+  getSale: (id: string) => apiClient.get<Sale>(`/sales/${id}`),
+  processSale: (data: {
+    showtimeId: string;
+    items: { type: string; quantity: number }[];
+    cashierName?: string;
+    paidAmount: number;
+  }) => apiClient.post<{ sale: Sale; tickets: Ticket[] }>('/sales', data),
+};
+
+export const ticketsApi = {
+  getTickets: (status?: TicketStatus, showtimeId?: string) => {
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (showtimeId) params.append('showtimeId', showtimeId);
+    const query = params.toString() ? `?${params.toString()}` : '';
+    return apiClient.get<Ticket[]>(`/tickets${query}`);
+  },
+  getTicket: (id: string) => apiClient.get<Ticket>(`/tickets/${id}`),
+  getTicketsBySale: (saleId: string) => apiClient.get<Ticket[]>(`/tickets/sale/${saleId}`),
+  cancelTicket: (id: string) => apiClient.patch<Ticket>(`/tickets/${id}/cancel`),
+};
+
+export const validatorApi = {
+  validateScan: (data: {
+    rawScanString: string;
+    scanType?: 'USB_SCANNER' | 'CAMERA' | 'MANUAL';
+    validatedBy?: string;
+  }) => apiClient.post<ScanResult>('/validator/scan', data),
+  getLogs: (limit?: number) => {
+    const query = limit ? `?limit=${limit}` : '';
+    return apiClient.get<ScanLog[]>(`/validator/logs${query}`);
+  },
+};
+
+export const dashboardApi = {
+  getStats: () => apiClient.get<any>('/dashboard/stats'),
+};

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { authService } from '../../services/authService';
-import { Lock, User as UserIcon, KeyRound, ShieldCheck, X, AlertCircle } from 'lucide-react';
+import { Lock, User as UserIcon, KeyRound, ShieldCheck, X, AlertCircle, Loader2 } from 'lucide-react';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -16,25 +16,35 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   const [username, setUsername] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
-  const handleFormSubmit = (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username.trim()) {
       setError('Por favor ingrese su usuario');
       return;
     }
 
-    const res = authService.login(username, password);
-    if (res.success) {
-      setError('');
-      setUsername('');
-      setPassword('');
-      onLoginSuccess();
-      onClose();
-    } else {
-      setError(res.error || 'Credenciales incorrectas');
+    setLoading(true);
+    setError('');
+
+    try {
+      const res = await authService.login(username, password);
+      if (res.success) {
+        setError('');
+        setUsername('');
+        setPassword('');
+        onLoginSuccess();
+        onClose();
+      } else {
+        setError(res.error || 'Credenciales incorrectas');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Error al iniciar sesión');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -124,10 +134,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
             <button
               type="submit"
-              className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm tracking-wide shadow-lg shadow-amber-500/25 transition-all flex items-center justify-center gap-2 transform active:scale-[0.99]"
+              disabled={loading}
+              className="w-full mt-2 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm tracking-wide shadow-lg shadow-amber-500/25 transition-all flex items-center justify-center gap-2 transform active:scale-[0.99] disabled:opacity-50"
             >
-              <ShieldCheck className="w-4 h-4" />
-              <span>INGRESAR AL SISTEMA</span>
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="w-4 h-4" />
+              )}
+              <span>{loading ? 'AUTENTICANDO...' : 'INGRESAR AL SISTEMA'}</span>
             </button>
           </form>
 

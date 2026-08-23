@@ -1,7 +1,9 @@
 import { User, UserRole } from '../core/types';
 import { soundService } from './soundService';
+import { authApi } from './api/cinemaApi';
 
 const AUTH_STORAGE_KEY = 'argon_auth_user_v1';
+const AUTH_TOKEN_KEY = 'argon_auth_token';
 
 export interface PredefinedAccount {
   id: string;
@@ -62,8 +64,29 @@ class AuthService {
     }
   }
 
-  login(username: string, password?: string): { success: boolean; user?: User; error?: string } {
+  getToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  }
+
+  async login(username: string, password?: string): Promise<{ success: boolean; user?: User; error?: string }> {
     const cleanUser = username.trim().toLowerCase();
+
+    // Intentar login con el Backend NestJS
+    try {
+      const res = await authApi.login(cleanUser, password || 'admin');
+      if (res && res.accessToken && res.user) {
+        localStorage.setItem(AUTH_TOKEN_KEY, res.accessToken);
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(res.user));
+        window.dispatchEvent(new CustomEvent('argon_auth_update', { detail: res.user }));
+        soundService.playSuccess();
+        return { success: true, user: res.user };
+      }
+    } catch (apiErr: any) {
+      console.warn('API login failed or offline, checking local accounts:', apiErr.message);
+    }
+
+    // Fallback a cuentas locales para desarrollo y modo sin conexión
     const account = PREDEFINED_ACCOUNTS.find(
       (acc) => acc.username.toLowerCase() === cleanUser
     );
@@ -109,6 +132,7 @@ class AuthService {
 
   logout(): void {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(AUTH_TOKEN_KEY);
     window.dispatchEvent(new CustomEvent('argon_auth_update', { detail: null }));
     soundService.playWarning();
   }

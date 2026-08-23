@@ -459,7 +459,7 @@ export const FooterModals: React.FC<FooterModalsProps> = ({ activeModal, onClose
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-white leading-tight">Libro de Reclamaciones Virtual</h3>
-                  <span className="text-[10px] text-slate-400 font-mono">Cines Argón S.A.C. • RUC 20608941235</span>
+                  <span className="text-[10px] text-slate-400 font-mono">MULTISERVICIOS ARGON • RUC 10058605692</span>
                 </div>
               </div>
               <button 

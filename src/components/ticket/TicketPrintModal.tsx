@@ -114,8 +114,8 @@ export const TicketPrintModal: React.FC<TicketPrintModalProps> = ({
                   <p className="text-[10px] text-slate-600 font-sans font-medium">
                     EXPERIENCIA CINEMATOGRÁFICA DE ALTA DEFINICIÓN
                   </p>
-                  <p className="text-[9px] text-slate-500">
-                    RUC: 20608941231 • Av. Central 450
+                  <p className="text-[9px] text-slate-500 font-mono font-bold">
+                    RUC: 10058605692 • MULTISERVICIOS ARGON
                   </p>
                 </div>
 

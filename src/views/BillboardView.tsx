@@ -22,6 +22,11 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
   const [selectedGenre, setSelectedGenre] = useState<string>('TODOS');
 
+  // Movie Detail Modal States
+  const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
+  const [isSynopsisExpanded, setIsSynopsisExpanded] = useState<boolean>(false);
+  const [trailerUrlToPlay, setTrailerUrlToPlay] = useState<string | null>(null);
+
   const loadData = () => {
     setMovies(cinemaStorage.getMovies());
     setShowtimes(cinemaStorage.getShowtimes());
@@ -58,6 +63,20 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
   const getRoomName = (roomId: string) => {
     const room = rooms.find(r => r.id === roomId);
     return room ? room.name : 'Sala Principal';
+  };
+
+  const formatDuration = (mins: number) => {
+    if (!mins) return '120 min';
+    const hrs = Math.floor(mins / 60);
+    const remainder = mins % 60;
+    return hrs > 0 ? `${hrs} hrs ${remainder > 0 ? `${remainder} min` : ''}` : `${remainder} min`;
+  };
+
+  const getYouTubeEmbedUrl = (url?: string) => {
+    if (!url) return null;
+    if (url.includes('embed/')) return url;
+    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    return match ? `https://www.youtube.com/embed/${match[1]}?autoplay=1` : url;
   };
 
   // Get list of unique genres
@@ -230,7 +249,11 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
                   return (
                     <div
                       key={movie.id}
-                      className="bg-slate-900/80 border border-slate-800 hover:border-slate-700 rounded-2xl overflow-hidden shadow-xl transition-all duration-300 hover:-translate-y-1 group flex flex-col justify-between"
+                      onClick={() => {
+                        setSelectedMovie(movie);
+                        setIsSynopsisExpanded(false);
+                      }}
+                      className="bg-slate-900/80 border border-slate-800 hover:border-amber-500/50 rounded-2xl overflow-hidden shadow-xl transition-all duration-300 hover:-translate-y-1 group flex flex-col justify-between cursor-pointer"
                     >
                       <div>
                         {/* Poster and Badges */}
@@ -242,12 +265,19 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
                           
-                          <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                          {/* Corner Ribbon */}
+                          <div className="absolute top-0 left-0">
+                            <div className="bg-rose-600 text-white font-black text-[9px] px-2.5 py-0.5 shadow-md uppercase tracking-wider rounded-br-lg">
+                              DOB
+                            </div>
+                          </div>
+
+                          <div className="absolute top-3 right-3 flex items-center gap-1.5">
                             <span className="px-2 py-0.5 rounded bg-amber-500 text-slate-950 font-black text-[10px]">
                               {movie.rating}
                             </span>
                             <span className="px-2 py-0.5 rounded bg-slate-950/80 backdrop-blur border border-slate-700 text-slate-300 font-bold text-[10px] flex items-center gap-1">
-                              <Clock className="w-3 h-3 text-slate-400" /> {movie.durationMinutes} min
+                              <Clock className="w-3 h-3 text-slate-400" /> {formatDuration(movie.durationMinutes)}
                             </span>
                           </div>
                         </div>
@@ -338,7 +368,14 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
               {upcomingMovies.map((movie) => (
-                <div key={movie.id} className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden group shadow-lg flex flex-col justify-between">
+                <div
+                  key={movie.id}
+                  onClick={() => {
+                    setSelectedMovie(movie);
+                    setIsSynopsisExpanded(false);
+                  }}
+                  className="bg-slate-900/80 border border-slate-800 hover:border-cyan-500/50 rounded-2xl overflow-hidden group shadow-lg flex flex-col justify-between cursor-pointer transition-all duration-300 hover:-translate-y-1"
+                >
                   <div className="aspect-[2/3] w-full overflow-hidden bg-slate-950 relative">
                     <img
                       src={movie.posterUrl}
@@ -420,6 +457,225 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
 
       </div>
       </div>
+
+      {/* ========================================================= */}
+      {/* MODAL: CINEMA MOVIE DETAIL (Cineplanet / Cinemark Style) */}
+      {/* ========================================================= */}
+      {selectedMovie && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-5 overflow-hidden animate-fade-in">
+          <div className="bg-[#0c1017] border border-slate-700/80 rounded-3xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-scale-in text-slate-100">
+            
+            {/* Header with Title and Close Button */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 shrink-0 bg-[#0c1017]">
+              <div className="flex items-center gap-2">
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[11px] uppercase tracking-wider">
+                  {selectedMovie.status === 'CARTELERA' ? 'En Cartelera' : 'Próximo Estreno'}
+                </span>
+                <span className="text-xs text-slate-400 font-mono font-semibold">Cines Argón</span>
+              </div>
+              <button
+                onClick={() => setSelectedMovie(null)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Scrollable Modal Body */}
+            <div className="p-5 sm:p-6 space-y-6 overflow-y-auto flex-1">
+              
+              {/* Top Section: Poster + Movie Details */}
+              <div className="flex flex-col sm:flex-row gap-5 sm:gap-6">
+                
+                {/* Poster with DOB ribbon & Ver Trailer under */}
+                <div className="shrink-0 flex flex-col items-center sm:items-start gap-3">
+                  <div className="relative w-40 sm:w-48 aspect-[2/3] rounded-2xl overflow-hidden shadow-2xl bg-slate-950 border border-slate-800 group">
+                    <img
+                      src={selectedMovie.posterUrl}
+                      alt={selectedMovie.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+
+                    {/* DOB / SUB Ribbon Badge */}
+                    <div className="absolute top-0 left-0">
+                      <div className="bg-rose-600 text-white font-black text-[10px] px-3 py-1 shadow-lg uppercase tracking-wider rounded-br-xl">
+                        DOB
+                      </div>
+                    </div>
+
+                    {/* Rating badge bottom right */}
+                    <div className="absolute bottom-2 right-2 px-2 py-0.5 bg-slate-950/90 border border-slate-700 rounded text-amber-400 font-bold text-[10px]">
+                      {selectedMovie.rating}
+                    </div>
+                  </div>
+
+                  {/* Ver Trailer Button under Poster */}
+                  {selectedMovie.trailerUrl && (
+                    <button
+                      onClick={() => setTrailerUrlToPlay(selectedMovie.trailerUrl || null)}
+                      className="w-full py-2 px-3 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/40 rounded-xl text-xs font-bold text-amber-400 flex items-center justify-center gap-2 transition-all shadow-md"
+                    >
+                      <Play className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                      <span>Ver tráiler oficial</span>
+                    </button>
+                  )}
+                </div>
+
+                {/* Movie Info Column */}
+                <div className="flex-1 space-y-3">
+                  
+                  {/* Title */}
+                  <h2 className="text-xl sm:text-2xl font-black text-white font-sans uppercase tracking-tight">
+                    {selectedMovie.title} {selectedMovie.title.toUpperCase().includes('(DOB)') ? '' : '(DOB)'}
+                  </h2>
+
+                  {/* Duration | Rating */}
+                  <div className="text-xs sm:text-sm font-semibold text-slate-300 flex items-center gap-2">
+                    <span>{formatDuration(selectedMovie.durationMinutes)}</span>
+                    <span className="text-slate-600">|</span>
+                    <span className="text-amber-400 font-bold">{selectedMovie.rating}</span>
+                    {selectedMovie.director && (
+                      <>
+                        <span className="text-slate-600">|</span>
+                        <span className="text-slate-400 font-normal">Dir. {selectedMovie.director}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Genres */}
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
+                    {selectedMovie.genre.map((g) => (
+                      <span
+                        key={g}
+                        className="text-[11px] px-2.5 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300 font-medium"
+                      >
+                        {g}
+                      </span>
+                    ))}
+                  </div>
+
+                  {/* Synopsis with Ver Más / Ver Menos */}
+                  <div className="pt-2">
+                    <p className={`text-xs sm:text-sm text-slate-300 leading-relaxed ${!isSynopsisExpanded ? 'line-clamp-4' : ''}`}>
+                      {selectedMovie.synopsis}
+                    </p>
+                    
+                    {selectedMovie.synopsis && selectedMovie.synopsis.length > 180 && (
+                      <button
+                        onClick={() => setIsSynopsisExpanded(!isSynopsisExpanded)}
+                        className="mt-2 text-xs font-bold text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-2.5 py-1 rounded transition-colors inline-block"
+                      >
+                        {isSynopsisExpanded ? 'Ver menos' : 'Ver más'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Ver Trailer link icon (styled exactly as Cineplanet reference) */}
+                  {selectedMovie.trailerUrl && (
+                    <div className="pt-2">
+                      <button
+                        onClick={() => setTrailerUrlToPlay(selectedMovie.trailerUrl || null)}
+                        className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1.5 group transition-colors"
+                      >
+                        <Film className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition-transform" />
+                        <span className="underline decoration-cyan-500/50 underline-offset-4">Ver trailer</span>
+                      </button>
+                    </div>
+                  )}
+
+                </div>
+              </div>
+
+              {/* Bottom Section: Horarios y Funciones de la Película */}
+              {selectedMovie.status === 'CARTELERA' && (
+                <div className="border-t border-slate-800 pt-5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-amber-400" />
+                        <span>Funciones y Horarios Disponibles</span>
+                      </h4>
+                      <p className="text-xs text-slate-400">Funciones para el día de hoy en Cines Argón</p>
+                    </div>
+                    <span className="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-lg">
+                      Sala VIP Premium
+                    </span>
+                  </div>
+
+                  {getMovieShowtimes(selectedMovie.id).length > 0 ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      {getMovieShowtimes(selectedMovie.id).map((st) => (
+                        <div
+                          key={st.id}
+                          className="bg-slate-950 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all shadow-md"
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono text-base font-black text-white">{st.startTime}</span>
+                              <span className="text-[10px] px-1.5 py-0.5 bg-slate-900 text-amber-400 rounded font-semibold border border-slate-800">
+                                {st.endTime ? `hasta ${st.endTime}` : '2D VIP'}
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-400 mt-0.5 font-sans">
+                              {getRoomName(st.roomId)} • {st.date}
+                            </p>
+                          </div>
+
+                          <div className="text-right">
+                            <span className="text-xs font-mono font-bold text-emerald-400 block">
+                              {st.availableSeats} disp.
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-sans">Aforo 25 butacas</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-4 rounded-xl bg-slate-950/60 border border-dashed border-slate-800 text-center text-xs text-slate-400">
+                      No hay funciones programadas para hoy. Consulta en boletería o regresa pronto para los nuevos horarios.
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+
+            {/* Footer */}
+            <div className="flex justify-end p-4 border-t border-slate-800 shrink-0 bg-[#0c1017]">
+              <button
+                onClick={() => setSelectedMovie(null)}
+                className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================= */}
+      {/* MODAL: YOUTUBE TRAILER POPUP PLAYER */}
+      {/* ========================================================= */}
+      {trailerUrlToPlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in">
+          <div className="relative w-full max-w-4xl bg-black border border-slate-800 rounded-3xl overflow-hidden shadow-2xl aspect-video">
+            <button
+              onClick={() => setTrailerUrlToPlay(null)}
+              className="absolute top-4 right-4 z-10 w-9 h-9 bg-slate-900/80 hover:bg-slate-800 text-white rounded-full flex items-center justify-center text-sm font-bold backdrop-blur border border-slate-700 transition-colors"
+            >
+              ✕
+            </button>
+            <iframe
+              src={getYouTubeEmbedUrl(trailerUrlToPlay) || trailerUrlToPlay}
+              title="Movie Trailer"
+              className="w-full h-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
 
       {/* Public Footer with Discreet Intranet Padlock Link */}
       <Footer onOpenLogin={onOpenLogin} />

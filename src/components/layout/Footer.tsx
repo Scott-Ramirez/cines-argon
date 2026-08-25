@@ -13,12 +13,12 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { FooterModals, FooterModalType } from './footer/FooterModals';
+import { GoogleMapsCard } from '../common/GoogleMapsCard';
 
-interface FooterProps {
-  onOpenLogin: () => void;
-}
 
-export const Footer: React.FC<FooterProps> = ({ onOpenLogin }) => {
+interface FooterProps {}
+
+export const Footer: React.FC<FooterProps> = () => {
   const currentYear = new Date().getFullYear();
   const [activeModal, setActiveModal] = useState<FooterModalType>(null);
 
@@ -73,8 +73,14 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLogin }) => {
                   Sala acondicionada con sillas cómodas (Aforo: 25 personas)
                 </span>
               </div>
+
+              {/* Cuadrito de Google Maps */}
+              <div className="pt-2">
+                <GoogleMapsCard compact={true} />
+              </div>
             </div>
           </div>
+
 
           {/* ========================================================= */}
           {/* COLUMNA 2: HORARIOS Y GUÍA DE SALA */}

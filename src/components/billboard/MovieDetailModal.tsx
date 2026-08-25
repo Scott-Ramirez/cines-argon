@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Movie, Showtime, Room } from '../../core/types';
 import { Play, Clock, Film } from 'lucide-react';
 
@@ -8,6 +9,7 @@ interface MovieDetailModalProps {
   rooms: Room[];
   onClose: () => void;
   onOpenTrailer: (trailerUrl: string) => void;
+  onSelectShowtime?: (showtime: Showtime) => void;
 }
 
 export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
@@ -15,9 +17,19 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
   showtimes,
   rooms,
   onClose,
-  onOpenTrailer
+  onOpenTrailer,
+  onSelectShowtime,
 }) => {
+
   const [isSynopsisExpanded, setIsSynopsisExpanded] = useState<boolean>(false);
+
+  useEffect(() => {
+    document.body.classList.add('has-modal-open');
+    return () => {
+      document.body.classList.remove('has-modal-open');
+    };
+  }, []);
+
 
   if (!movie) return null;
 
@@ -38,15 +50,17 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
     return room ? room.name : 'Sala Principal';
   };
 
-  return (
+  return createPortal(
     <div 
       onClick={onClose}
-      className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md p-3 sm:p-6 flex min-h-full items-center justify-center animate-fade-in text-slate-100"
+      data-modal="true"
+      className="fixed inset-0 z-[9999] overflow-y-auto bg-black/90 backdrop-blur-md p-3 pt-6 pb-6 sm:p-6 flex items-start sm:items-center justify-center animate-fade-in text-slate-100"
     >
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="relative bg-[#0c1017] border border-slate-700/80 rounded-3xl max-w-3xl w-full max-h-[86vh] flex flex-col shadow-2xl overflow-hidden my-auto animate-scale-in"
+        className="relative bg-[#0c1017] border border-slate-700/80 rounded-3xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden my-auto animate-scale-in"
       >
+
         {/* Header with Title and Close Button */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 shrink-0 bg-[#0c1017]">
           <div className="flex items-center gap-2">
@@ -189,7 +203,7 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
                   {getMovieShowtimes(movie.id).map((st) => (
                     <div
                       key={st.id}
-                      className="bg-slate-950 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-3.5 flex items-center justify-between gap-3 transition-all shadow-md"
+                      className="bg-slate-950 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all shadow-md"
                     >
                       <div>
                         <div className="flex items-center gap-2">
@@ -203,14 +217,29 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
                         </p>
                       </div>
 
-                      <div className="text-right">
-                        <span className="text-xs font-mono font-bold text-emerald-400 block">
-                          {st.availableSeats} disp.
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-sans">Aforo 25 butacas</span>
+                      <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                        <div className="text-left sm:text-right">
+                          <span className="text-xs font-mono font-bold text-emerald-400 block">
+                            {st.availableSeats} disp.
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-sans">Aforo 25 butacas</span>
+                        </div>
+
+                        {onSelectShowtime && st.availableSeats > 0 && (
+                          <button
+                            onClick={() => {
+                              onSelectShowtime(st);
+                              onClose();
+                            }}
+                            className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-md shadow-amber-500/20 transition-all flex items-center gap-1.5"
+                          >
+                            <span>Comprar</span>
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
+
                 </div>
               ) : (
                 <div className="p-4 rounded-xl bg-slate-950/60 border border-dashed border-slate-800 text-center text-xs text-slate-400">
@@ -233,6 +262,8 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
+

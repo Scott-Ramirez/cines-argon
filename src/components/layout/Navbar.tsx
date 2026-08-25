@@ -6,13 +6,11 @@ export type PublicSection = 'billboard' | 'upcoming' | 'experiences';
 interface NavbarProps {
   activeSection: PublicSection;
   onSectionChange: (section: PublicSection) => void;
-  onOpenLogin: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   activeSection,
   onSectionChange,
-  onOpenLogin,
 }) => {
   const [time, setTime] = useState<string>('');
 
@@ -134,16 +132,6 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {time || '--:--:--'}
               </span>
             </div>
-
-            {/* Intranet Staff Button */}
-            <button
-              onClick={onOpenLogin}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/50 text-slate-300 hover:text-amber-400 text-xs font-mono font-bold transition-all shadow-sm group"
-              title="Acceso para el personal / Taquilla"
-            >
-              <Lock className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-400 transition-colors" />
-              <span className="hidden sm:inline">Intranet</span>
-            </button>
 
           </div>
 

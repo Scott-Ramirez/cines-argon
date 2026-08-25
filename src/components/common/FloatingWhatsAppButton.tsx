@@ -1,13 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export const FloatingWhatsAppButton: React.FC = () => {
   const [isHovered, setIsHovered] = useState(false);
+  const [hasModalOpen, setHasModalOpen] = useState(false);
   const phoneNumber = '51920569220';
   const defaultMessage = encodeURIComponent('Hola Cines Argón, quisiera consultar sobre la cartelera, horarios o reservas de sala.');
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${defaultMessage}`;
 
+  useEffect(() => {
+    const checkModals = () => {
+      const modalElements = document.querySelectorAll(
+        '[data-modal="true"], .fixed.z-\\[100\\], .fixed.z-\\[9999\\], .modal-container'
+      );
+      const isAnyModalOpen =
+        modalElements.length > 0 ||
+        document.body.classList.contains('modal-open') ||
+        document.body.classList.contains('has-modal-open');
+      setHasModalOpen(isAnyModalOpen);
+    };
+
+    checkModals();
+
+    const observer = new MutationObserver(checkModals);
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true });
+
+    return () => observer.disconnect();
+  }, []);
+
+  // Ocultar completamente si hay algún modal abierto en la aplicación
+  if (hasModalOpen) return null;
+
   return (
-    <div className="fixed bottom-6 right-6 z-40 no-print flex items-center gap-3">
+    <div className="fixed bottom-6 right-6 z-30 no-print flex items-center gap-3 animate-fade-in">
       {/* Expandable tooltip message on hover or desktop */}
       <div 
         className={`hidden sm:flex items-center gap-2 bg-slate-900/95 border border-emerald-500/40 text-slate-200 text-xs px-3.5 py-2 rounded-2xl shadow-2xl backdrop-blur-md transition-all duration-300 transform ${

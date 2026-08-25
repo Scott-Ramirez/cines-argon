@@ -83,7 +83,8 @@ export interface Ticket {
 
 export interface Sale {
   id: string;
-  ticketIds: string[];
+  ticketIds?: string[];
+  tickets?: Ticket[];
   movieTitle: string;
   showtimeId: string;
   totalAmount: number;
@@ -92,7 +93,14 @@ export interface Sale {
   cashierName: string;
   createdAt: string;
   totalTickets: number;
+  paymentMethod?: string;
+  externalPaymentId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  customerPhone?: string;
+  status?: string;
 }
+
 
 export interface ScanResult {
   success: boolean;

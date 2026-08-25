@@ -20,8 +20,9 @@ export const TrailerPlayerModal: React.FC<TrailerPlayerModalProps> = ({
   return (
     <div 
       onClick={onClose}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md p-4 animate-fade-in"
     >
+
       <div 
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-4xl bg-black border border-slate-800 rounded-3xl overflow-hidden shadow-2xl aspect-video"

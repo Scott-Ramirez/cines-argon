@@ -164,3 +164,27 @@ export const validatorApi = {
 export const dashboardApi = {
   getStats: () => apiClient.get<any>('/dashboard/stats'),
 };
+
+export const paymentsApi = {
+  createPreference: (data: {
+    showtimeId: string;
+    items: { type: string; quantity: number }[];
+    customerName: string;
+    customerEmail: string;
+    customerPhone?: string;
+  }) =>
+    apiClient.post<{ preferenceId: string; initPoint: string; sandboxInitPoint: string }>(
+      '/payments/mercadopago/preference',
+      data,
+    ),
+
+  getSaleByPaymentId: (paymentId: string) =>
+    apiClient.get<Sale>(`/payments/sales/by-payment/${paymentId}`),
+
+  refundPayment: (saleId: string, reason?: string) =>
+    apiClient.post<{ success: boolean; message: string }>('/payments/mercadopago/refund', {
+      saleId,
+      reason,
+    }),
+};
+

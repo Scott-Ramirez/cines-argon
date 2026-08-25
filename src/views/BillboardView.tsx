@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Movie, Showtime, Room, HeroSlide } from '../core/types';
+import { Movie, Showtime, Room, HeroSlide, PricingTier } from '../core/types';
 import { cinemaStorage } from '../services/storage/cinemaStorage';
-import { Film, Calendar, Sparkles } from 'lucide-react';
+import { pricingApi } from '../services/api/cinemaApi';
+import { Film, Calendar, Sparkles, CreditCard } from 'lucide-react';
 import { PublicSection } from '../components/layout/Navbar';
 import { Footer } from '../components/layout/Footer';
 import { BillboardHeroMarquee } from '../components/billboard/BillboardHeroMarquee';
@@ -9,20 +10,21 @@ import { BillboardMovieCard } from '../components/billboard/BillboardMovieCard';
 import { BillboardExperiences } from '../components/billboard/BillboardExperiences';
 import { MovieDetailModal } from '../components/billboard/MovieDetailModal';
 import { TrailerPlayerModal } from '../components/billboard/TrailerPlayerModal';
+import { CheckoutModal } from '../components/billboard/CheckoutModal';
+import { PaymentResultModal } from '../components/billboard/PaymentResultModal';
 
 interface BillboardViewProps {
   activeSection?: PublicSection;
-  onOpenLogin?: () => void;
 }
 
 export const BillboardView: React.FC<BillboardViewProps> = ({ 
   activeSection = 'billboard',
-  onOpenLogin = () => {}
 }) => {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [showtimes, setShowtimes] = useState<Showtime[]>([]);
   const [rooms, setRooms] = useState<Room[]>([]);
   const [heroSlides, setHeroSlides] = useState<HeroSlide[]>([]);
+  const [pricingTiers, setPricingTiers] = useState<PricingTier[]>([]);
   const [featuredIndex, setFeaturedIndex] = useState<number>(0);
   const [autoRotate, setAutoRotate] = useState<boolean>(true);
   const [selectedGenre, setSelectedGenre] = useState<string>('TODOS');
@@ -31,11 +33,21 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
   const [selectedMovie, setSelectedMovie] = useState<Movie | null>(null);
   const [trailerUrlToPlay, setTrailerUrlToPlay] = useState<string | null>(null);
 
+  // Checkout States
+  const [checkoutShowtime, setCheckoutShowtime] = useState<Showtime | null>(null);
+  const [checkoutMovie, setCheckoutMovie] = useState<Movie | null>(null);
+  const [showPaymentResult, setShowPaymentResult] = useState<boolean>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return !!(params.get('payment_status') || params.get('payment_id') || params.get('collection_id'));
+  });
+
   const loadData = () => {
     setMovies(cinemaStorage.getMovies());
     setShowtimes(cinemaStorage.getShowtimes());
     setRooms(cinemaStorage.getRooms());
     setHeroSlides(cinemaStorage.getHeroSlides());
+
+    pricingApi.getPricing().then(setPricingTiers).catch(() => {});
   };
 
   useEffect(() => {
@@ -62,6 +74,12 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
   const getMovieShowtimes = (movieId?: string) => {
     if (!movieId) return [];
     return showtimes.filter(s => s.movieId === movieId);
+  };
+
+  const handleStartCheckout = (movie: Movie, showtime: Showtime) => {
+    setCheckoutMovie(movie);
+    setCheckoutShowtime(showtime);
+    setSelectedMovie(null);
   };
 
   // Unique genres
@@ -99,7 +117,7 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
                   <div>
                     <h2 className="text-2xl font-black text-white font-sans tracking-tight">EN CARTELERA HOY</h2>
                     <p className="text-xs text-slate-400">
-                      Disfruta de los mejores estrenos en pantalla gigante
+                      Disfruta de los mejores estrenos en pantalla gigante en Tamanco Viejo
                     </p>
                   </div>
                 </div>
@@ -139,15 +157,8 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
                   <Film className="w-10 h-10 text-amber-400/60 mx-auto animate-pulse" />
                   <h3 className="text-lg font-bold text-white">Cartelera en Preparación</h3>
                   <p className="text-xs text-slate-400 max-w-md mx-auto">
-                    Actualmente no hay películas en la base de datos. Ingresa a la Intranet de Administración para importar películas desde TheMovieDB o programar nuevas funciones.
+                    Actualmente no hay funciones programadas para hoy. Muy pronto publicaremos nuevos horarios y estrenos.
                   </p>
-                  <button
-                    onClick={onOpenLogin}
-                    className="mt-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl inline-flex items-center gap-1.5 transition-colors shadow-lg shadow-amber-500/20"
-                  >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>Acceder como Administrador</span>
-                  </button>
                 </div>
               )}
 
@@ -163,7 +174,7 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
                 </div>
                 <div>
                   <h3 className="text-2xl font-black text-white font-sans tracking-tight">PRÓXIMAMENTE EN CINES ARGÓN</h3>
-                  <p className="text-xs text-slate-400">Los estrenos más esperados que llegarán a nuestras salas</p>
+                  <p className="text-xs text-slate-400">Los estrenos más esperados que llegarán a nuestras salas en Tamanco</p>
                 </div>
               </div>
 
@@ -211,6 +222,7 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
         rooms={rooms}
         onClose={() => setSelectedMovie(null)}
         onOpenTrailer={(url) => setTrailerUrlToPlay(url)}
+        onSelectShowtime={(st) => selectedMovie && handleStartCheckout(selectedMovie, st)}
       />
 
       <TrailerPlayerModal
@@ -218,8 +230,29 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
         onClose={() => setTrailerUrlToPlay(null)}
       />
 
+      {/* Checkout Modal */}
+      {checkoutShowtime && checkoutMovie && (
+        <CheckoutModal
+          movie={checkoutMovie}
+          showtime={checkoutShowtime}
+          room={rooms.find((r) => r.id === checkoutShowtime.roomId)}
+          pricingTiers={pricingTiers}
+          onClose={() => {
+            setCheckoutShowtime(null);
+            setCheckoutMovie(null);
+          }}
+        />
+      )}
+
+      {/* Payment Result Modal (After returning from Mercado Pago) */}
+      {showPaymentResult && (
+        <PaymentResultModal
+          onClose={() => setShowPaymentResult(false)}
+        />
+      )}
+
       {/* Public Footer */}
-      <Footer onOpenLogin={onOpenLogin} />
+      <Footer />
 
     </div>
   );

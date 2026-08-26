@@ -1,5 +1,14 @@
-const env = (import.meta as any).env || {};
-const BASE_URL = env.VITE_API_BASE_URL || 'http://localhost:4000/api';
+const getApiBaseUrl = (): string => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+    return 'https://api.anthony-ramirez.org/api';
+  }
+  return 'http://localhost:4000/api';
+};
+
+const BASE_URL = getApiBaseUrl();
 
 export class ApiError extends Error {
   constructor(

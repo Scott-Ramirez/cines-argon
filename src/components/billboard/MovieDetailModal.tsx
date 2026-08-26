@@ -12,6 +12,34 @@ interface MovieDetailModalProps {
   onSelectShowtime?: (showtime: Showtime) => void;
 }
 
+const isTodayDate = (dateStr?: string) => {
+  if (!dateStr) return false;
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const todayFormatted = `${year}-${month}-${day}`;
+  return dateStr === todayFormatted;
+};
+
+const formatShowtimeDate = (dateStr?: string) => {
+  if (!dateStr) return '';
+  if (isTodayDate(dateStr)) return 'Hoy';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+  } catch (e) {
+    // fallback
+  }
+  return dateStr;
+};
+
 export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
   movie,
   showtimes,
@@ -30,7 +58,6 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
     };
   }, []);
 
-
   if (!movie) return null;
 
   const formatDuration = (mins: number) => {
@@ -47,7 +74,50 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
 
   const getRoomName = (roomId: string) => {
     const room = rooms.find(r => r.id === roomId);
-    return room ? room.name : 'Sala Principal';
+    return room ? room.name : (rooms.length > 0 ? rooms[0].name : 'Sala Principal');
+  };
+
+  const movieShowtimes = getMovieShowtimes(movie.id);
+  const hasShowtimeToday = movieShowtimes.some(st => isTodayDate(st.date));
+  const primaryShowtime = movieShowtimes.length > 0 ? movieShowtimes[0] : null;
+
+  const renderHeaderBadge = () => {
+    if (movie.status === 'PROXIMAMENTE') {
+      return (
+        <span className="px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+          <Sparkles className="w-3 h-3 text-cyan-400" />
+          Próximo Estreno
+        </span>
+      );
+    }
+    if (hasShowtimeToday) {
+      return (
+        <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+          En Cartelera Hoy
+        </span>
+      );
+    }
+    if (primaryShowtime?.date) {
+      return (
+        <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+          <Calendar className="w-3 h-3 text-amber-400" />
+          Función el {formatShowtimeDate(primaryShowtime.date)}
+        </span>
+      );
+    }
+    return (
+      <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+        En Cartelera
+      </span>
+    );
+  };
+
+  const getPosterBadgeText = () => {
+    if (movie.status === 'PROXIMAMENTE') return 'PRONTO';
+    if (hasShowtimeToday) return 'HOY';
+    if (primaryShowtime?.date) return formatShowtimeDate(primaryShowtime.date).toUpperCase();
+    return 'CARTELERA';
   };
 
   return createPortal(
@@ -64,17 +134,7 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
         {/* Header with Title and Close Button */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 shrink-0 bg-[#0c1017]">
           <div className="flex items-center gap-2">
-            {movie.status === 'CARTELERA' ? (
-              <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                En Cartelera Hoy
-              </span>
-            ) : (
-              <span className="px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
-                <Sparkles className="w-3 h-3 text-cyan-400" />
-                Próximo Estreno
-              </span>
-            )}
+            {renderHeaderBadge()}
             <span className="text-xs text-slate-400 font-mono font-semibold">Cines Argón</span>
           </div>
           <button
@@ -112,7 +172,7 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
                   <div className={`text-slate-950 font-black text-[10px] px-2 py-0.5 shadow-lg uppercase tracking-wider rounded-bl-lg ${
                     movie.status === 'CARTELERA' ? 'bg-amber-400' : 'bg-cyan-400'
                   }`}>
-                    {movie.status === 'CARTELERA' ? 'HOY' : 'PRONTO'}
+                    {getPosterBadgeText()}
                   </div>
                 </div>
 
@@ -206,18 +266,24 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
                 <div>
                   <h4 className="text-sm font-bold text-white flex items-center gap-2">
                     <Clock className="w-4 h-4 text-amber-400" />
-                    <span>Funciones y Horarios Disponibles (Hoy)</span>
+                    <span>Funciones y Horarios Programados</span>
                   </h4>
-                  <p className="text-xs text-slate-400">Funciones para el día de hoy en Cines Argón</p>
+                  <p className="text-xs text-slate-400">
+                    {hasShowtimeToday
+                      ? 'Funciones para el día de hoy en Cines Argón'
+                      : primaryShowtime?.date
+                      ? `Próximas funciones para el ${formatShowtimeDate(primaryShowtime.date)}`
+                      : 'Funciones disponibles en Cines Argón'}
+                  </p>
                 </div>
                 <span className="text-[11px] font-mono text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-0.5 rounded-lg">
-                  Sala VIP Premium
+                  {rooms.length > 0 ? rooms[0].name : 'Sala Principal'}
                 </span>
               </div>
 
-              {getMovieShowtimes(movie.id).length > 0 ? (
+              {movieShowtimes.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  {getMovieShowtimes(movie.id).map((st) => (
+                  {movieShowtimes.map((st) => (
                     <div
                       key={st.id}
                       className="bg-slate-950 border border-slate-800 hover:border-amber-500/50 rounded-2xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 transition-all shadow-md"
@@ -225,12 +291,17 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-mono text-base font-black text-white">{st.startTime}</span>
-                          <span className="text-[10px] px-1.5 py-0.5 bg-slate-900 text-amber-400 rounded font-semibold border border-slate-800">
-                            {st.endTime ? `hasta ${st.endTime}` : '2D VIP'}
+                          <span className="text-[10px] px-2 py-0.5 bg-amber-500/15 text-amber-300 rounded font-bold border border-amber-500/30">
+                            {formatShowtimeDate(st.date)}
                           </span>
+                          {st.endTime && (
+                            <span className="text-[10px] px-1.5 py-0.5 bg-slate-900 text-slate-400 rounded font-semibold border border-slate-800">
+                              hasta {st.endTime}
+                            </span>
+                          )}
                         </div>
                         <p className="text-[11px] text-slate-400 mt-0.5 font-sans">
-                          {getRoomName(st.roomId)} • {st.date}
+                          {getRoomName(st.roomId)}
                         </p>
                       </div>
 

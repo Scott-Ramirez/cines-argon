@@ -9,6 +9,34 @@ interface BillboardHeroMarqueeProps {
   movies?: Movie[];
 }
 
+const isTodayDate = (dateStr?: string) => {
+  if (!dateStr) return false;
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const todayFormatted = `${year}-${month}-${day}`;
+  return dateStr === todayFormatted;
+};
+
+const formatShowtimeDate = (dateStr?: string) => {
+  if (!dateStr) return '';
+  if (isTodayDate(dateStr)) return 'Hoy';
+  try {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const year = parseInt(parts[0], 10);
+      const month = parseInt(parts[1], 10) - 1;
+      const day = parseInt(parts[2], 10);
+      const d = new Date(year, month, day);
+      return d.toLocaleDateString('es-ES', { weekday: 'short', day: 'numeric', month: 'short' });
+    }
+  } catch (e) {
+    // fallback
+  }
+  return dateStr;
+};
+
 export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
   currentSlide,
   showtimes,
@@ -33,6 +61,18 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
     const room = rooms.find(r => r.id === roomId);
     return room ? room.name : 'Sala Principal';
   };
+
+  const movieShowtimes = currentSlide.movieId ? getMovieShowtimes(currentSlide.movieId) : [];
+  const primaryShowtime = movieShowtimes.length > 0 ? movieShowtimes[0] : null;
+
+  let slideDateBadge = '';
+  if (primaryShowtime?.date) {
+    slideDateBadge = isTodayDate(primaryShowtime.date)
+      ? `HOY • ${currentSlide.time || primaryShowtime.startTime}`
+      : `${formatShowtimeDate(primaryShowtime.date).toUpperCase()} • ${currentSlide.time || primaryShowtime.startTime}`;
+  } else if (currentSlide.time && currentSlide.time.trim() !== '') {
+    slideDateBadge = currentSlide.time;
+  }
 
   return (
     <div className="relative w-full h-[480px] lg:h-[540px] overflow-hidden border-b border-slate-800/80 shadow-2xl">
@@ -59,9 +99,9 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
                 <Sparkles className="w-3.5 h-3.5" /> PRÓXIMO ESTRENO
               </span>
             ) : (
-              currentSlide.time && currentSlide.time.trim() !== '' && (
+              slideDateBadge !== '' && (
                 <span className="px-3.5 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-xs rounded-full uppercase tracking-wider shadow-lg shadow-amber-500/40 flex items-center gap-1.5 ring-1 ring-amber-400">
-                  <Clock className="w-3.5 h-3.5" /> HOY • {currentSlide.time}
+                  <Clock className="w-3.5 h-3.5" /> {slideDateBadge}
                 </span>
               )
             )}
@@ -105,18 +145,21 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
           </p>
 
           {/* Showtimes for Featured Movie if in Cartelera */}
-          {!isUpcoming && currentSlide.movieId && getMovieShowtimes(currentSlide.movieId).length > 0 && (
+          {!isUpcoming && movieShowtimes.length > 0 && (
             <div className="pt-2">
               <span className="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-2 font-mono">
-                HORARIOS HOY EN SALA ÚNICA:
+                {movieShowtimes.some(st => isTodayDate(st.date)) ? 'HORARIOS HOY EN CARTELERA:' : `HORARIOS PROGRAMADOS (${formatShowtimeDate(movieShowtimes[0].date).toUpperCase()}):`}
               </span>
               <div className="flex flex-wrap gap-2">
-                {getMovieShowtimes(currentSlide.movieId).map(st => (
+                {movieShowtimes.map(st => (
                   <div
                     key={st.id}
                     className="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-amber-500/40 text-amber-400 font-mono font-bold text-xs flex items-center gap-2 backdrop-blur shadow"
                   >
                     <span className="text-white font-bold">{st.startTime}</span>
+                    <span className="text-[10px] text-amber-300 font-semibold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                      {formatShowtimeDate(st.date)}
+                    </span>
                     <span className="text-[10px] text-slate-400">({getRoomName(st.roomId)})</span>
                   </div>
                 ))}

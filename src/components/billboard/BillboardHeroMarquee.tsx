@@ -45,7 +45,7 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
           <div className="flex flex-wrap items-center gap-2">
             
             {/* Specific Screening Hour Badge */}
-            {currentSlide.time && (
+            {currentSlide.time && currentSlide.time.trim() !== '' && (
               <span className="px-3.5 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-xs rounded-full uppercase tracking-wider shadow-lg shadow-amber-500/40 flex items-center gap-1.5 ring-1 ring-amber-400">
                 <Clock className="w-3.5 h-3.5" /> HOY • {currentSlide.time}
               </span>

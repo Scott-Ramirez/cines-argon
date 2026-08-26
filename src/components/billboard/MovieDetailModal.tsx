@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Movie, Showtime, Room } from '../../core/types';
-import { Play, Clock, Film } from 'lucide-react';
+import { Play, Clock, Film, Calendar, Sparkles } from 'lucide-react';
 
 interface MovieDetailModalProps {
   movie: Movie | null;
@@ -64,9 +64,17 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
         {/* Header with Title and Close Button */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 shrink-0 bg-[#0c1017]">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[11px] uppercase tracking-wider">
-              {movie.status === 'CARTELERA' ? 'En Cartelera' : 'Próximo Estreno'}
-            </span>
+            {movie.status === 'CARTELERA' ? (
+              <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                En Cartelera Hoy
+              </span>
+            ) : (
+              <span className="px-3 py-1 rounded-full bg-cyan-500/20 border border-cyan-500/40 text-cyan-300 font-bold text-[11px] uppercase tracking-wider flex items-center gap-1.5 shadow-sm">
+                <Sparkles className="w-3 h-3 text-cyan-400" />
+                Próximo Estreno
+              </span>
+            )}
             <span className="text-xs text-slate-400 font-mono font-semibold">Cines Argón</span>
           </div>
           <button
@@ -96,6 +104,15 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
                 <div className="absolute top-0 left-0">
                   <div className="bg-rose-600 text-white font-black text-[10px] px-2.5 py-0.5 shadow-lg uppercase tracking-wider rounded-br-lg">
                     DOB
+                  </div>
+                </div>
+
+                {/* Status indicator top right on poster */}
+                <div className="absolute top-0 right-0">
+                  <div className={`text-slate-950 font-black text-[10px] px-2 py-0.5 shadow-lg uppercase tracking-wider rounded-bl-lg ${
+                    movie.status === 'CARTELERA' ? 'bg-amber-400' : 'bg-cyan-400'
+                  }`}>
+                    {movie.status === 'CARTELERA' ? 'HOY' : 'PRONTO'}
                   </div>
                 </div>
 
@@ -166,7 +183,7 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
                 )}
               </div>
 
-              {/* Ver Trailer link icon (styled exactly as Cineplanet reference) */}
+              {/* Ver Trailer link icon */}
               {movie.trailerUrl && (
                 <div className="pt-1">
                   <button
@@ -182,14 +199,14 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Bottom Section: Horarios y Funciones de la Película */}
-          {movie.status === 'CARTELERA' && (
+          {/* Bottom Section: Horarios para Hoy o Información de Próximamente */}
+          {movie.status === 'CARTELERA' ? (
             <div className="border-t border-slate-800 pt-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-bold text-white flex items-center gap-2">
                     <Clock className="w-4 h-4 text-amber-400" />
-                    <span>Funciones y Horarios Disponibles</span>
+                    <span>Funciones y Horarios Disponibles (Hoy)</span>
                   </h4>
                   <p className="text-xs text-slate-400">Funciones para el día de hoy en Cines Argón</p>
                 </div>
@@ -246,6 +263,33 @@ export const MovieDetailModal: React.FC<MovieDetailModalProps> = ({
                   No hay funciones programadas para hoy. Consulta en boletería o regresa pronto para los nuevos horarios.
                 </div>
               )}
+            </div>
+          ) : (
+            <div className="border-t border-slate-800 pt-4 space-y-3">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-cyan-950/40 via-slate-900/60 to-cyan-950/20 border border-cyan-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-lg">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-11 h-11 rounded-xl bg-cyan-500/15 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shrink-0 shadow-inner">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>Próximo Estreno en Cines Argón</span>
+                      <span className="text-[9px] font-black text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 px-2 py-0.5 rounded uppercase tracking-wider">
+                        Pronto
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-300 leading-relaxed">
+                      Esta película estará disponible muy pronto en nuestras salas de Tamanco Viejo. Los horarios de proyección se anunciarán próximamente.
+                    </p>
+                  </div>
+                </div>
+                <div className="sm:text-right shrink-0">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-cyan-300 bg-cyan-500/10 border border-cyan-500/30 px-3 py-1.5 rounded-xl whitespace-nowrap">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                    Estreno por anunciar
+                  </span>
+                </div>
+              </div>
             </div>
           )}
 

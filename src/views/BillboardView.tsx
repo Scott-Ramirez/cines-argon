@@ -98,6 +98,7 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
             currentSlide={currentSlide}
             showtimes={showtimes}
             rooms={rooms}
+            movies={movies}
           />
         )}
 

@@ -1,19 +1,28 @@
 import React from 'react';
-import { HeroSlide, Showtime, Room } from '../../core/types';
-import { Clock, Sparkles } from 'lucide-react';
+import { HeroSlide, Showtime, Room, Movie } from '../../core/types';
+import { Clock, Sparkles, Calendar } from 'lucide-react';
 
 interface BillboardHeroMarqueeProps {
   currentSlide: HeroSlide | null;
   showtimes: Showtime[];
   rooms: Room[];
+  movies?: Movie[];
 }
 
 export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
   currentSlide,
   showtimes,
-  rooms
+  rooms,
+  movies = []
 }) => {
   if (!currentSlide) return null;
+
+  const linkedMovie = movies.find(m => m.id === currentSlide.movieId);
+  const isUpcoming =
+    linkedMovie?.status === 'PROXIMAMENTE' ||
+    currentSlide.tagline?.toUpperCase().includes('PROXIM') ||
+    currentSlide.tagline?.toUpperCase().includes('PRÓXIM') ||
+    currentSlide.tagline?.toUpperCase().includes('PRONTO');
 
   const getMovieShowtimes = (movieId?: string) => {
     if (!movieId) return [];
@@ -44,15 +53,21 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
           {/* Badges: Custom Hour + Tagline + Rating */}
           <div className="flex flex-wrap items-center gap-2">
             
-            {/* Specific Screening Hour Badge */}
-            {currentSlide.time && (
-              <span className="px-3.5 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-xs rounded-full uppercase tracking-wider shadow-lg shadow-amber-500/40 flex items-center gap-1.5 ring-1 ring-amber-400">
-                <Clock className="w-3.5 h-3.5" /> HOY • {currentSlide.time}
+            {/* Status / Screening Hour Badge */}
+            {isUpcoming ? (
+              <span className="px-3.5 py-1 bg-gradient-to-r from-cyan-500 to-blue-600 text-slate-950 font-black text-xs rounded-full uppercase tracking-wider shadow-lg shadow-cyan-500/30 flex items-center gap-1.5 ring-1 ring-cyan-400">
+                <Sparkles className="w-3.5 h-3.5" /> PRÓXIMO ESTRENO
               </span>
+            ) : (
+              currentSlide.time && currentSlide.time.trim() !== '' && (
+                <span className="px-3.5 py-1 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-xs rounded-full uppercase tracking-wider shadow-lg shadow-amber-500/40 flex items-center gap-1.5 ring-1 ring-amber-400">
+                  <Clock className="w-3.5 h-3.5" /> HOY • {currentSlide.time}
+                </span>
+              )
             )}
 
-            {/* Tagline / Audience type */}
-            {currentSlide.tagline && (
+            {/* Tagline / Audience type (if not duplicating upcoming badge) */}
+            {currentSlide.tagline && (!isUpcoming || (!currentSlide.tagline.toUpperCase().includes('PROXIM') && !currentSlide.tagline.toUpperCase().includes('PRÓXIM') && !currentSlide.tagline.toUpperCase().includes('PRONTO'))) && (
               <span className="px-3 py-1 bg-slate-900/90 backdrop-blur-md border border-amber-500/50 text-amber-300 font-bold text-xs rounded-full flex items-center gap-1">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" /> {currentSlide.tagline}
               </span>
@@ -89,8 +104,8 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
             {currentSlide.synopsis}
           </p>
 
-          {/* Showtimes for Featured Movie if associated */}
-          {currentSlide.movieId && getMovieShowtimes(currentSlide.movieId).length > 0 && (
+          {/* Showtimes for Featured Movie if in Cartelera */}
+          {!isUpcoming && currentSlide.movieId && getMovieShowtimes(currentSlide.movieId).length > 0 && (
             <div className="pt-2">
               <span className="text-[11px] uppercase tracking-wider text-slate-400 font-bold block mb-2 font-mono">
                 HORARIOS HOY EN SALA ÚNICA:
@@ -105,6 +120,16 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
                     <span className="text-[10px] text-slate-400">({getRoomName(st.roomId)})</span>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* Upcoming Info Pill */}
+          {isUpcoming && (
+            <div className="pt-2 flex items-center gap-2">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-cyan-950/50 border border-cyan-500/30 text-cyan-300 font-sans text-xs shadow-md">
+                <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="font-semibold">Próximamente en cartelera • Horarios por anunciar</span>
               </div>
             </div>
           )}

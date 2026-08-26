@@ -103,7 +103,7 @@ export const BillboardView: React.FC<BillboardViewProps> = ({
         )}
 
         {/* Billboard Main Content Section */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-12">
+        <div id="cartelera-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 space-y-12">
           
           {/* SECTION 1: CARTELERA PRINCIPAL */}
           {activeSection !== 'experiences' && (

@@ -1,6 +1,6 @@
 import React from 'react';
 import { HeroSlide, Showtime, Room, Movie } from '../../core/types';
-import { Clock, Sparkles, Calendar } from 'lucide-react';
+import { Clock, Sparkles, Calendar, ChevronDown } from 'lucide-react';
 
 interface BillboardHeroMarqueeProps {
   currentSlide: HeroSlide | null;
@@ -75,20 +75,20 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
   }
 
   return (
-    <div className="relative w-full h-[480px] lg:h-[540px] overflow-hidden border-b border-slate-800/80 shadow-2xl">
+    <div className="relative w-full h-[calc(100vh-80px)] min-h-[580px] max-h-[1080px] overflow-hidden border-b border-slate-800/80 shadow-2xl flex flex-col justify-end">
       {/* Backdrop Image with Dark Gradient Overlays */}
       <img
         key={currentSlide.id}
         src={currentSlide.backdropUrl || currentSlide.posterUrl}
         alt={currentSlide.title}
-        className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.38] scale-105 transition-transform duration-1000 ease-out animate-fade-in"
+        className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.42] scale-105 transition-transform duration-1000 ease-out animate-fade-in"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-[#07090e]/60 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#07090e] via-[#07090e]/50 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-r from-[#07090e] via-[#07090e]/85 to-transparent w-full lg:w-3/4" />
 
       {/* Hero Content */}
-      <div className="relative max-w-7xl mx-auto h-full px-6 lg:px-8 flex items-end pb-12">
-        <div className="max-w-2xl space-y-4">
+      <div className="relative max-w-7xl mx-auto w-full px-6 lg:px-8 pb-12 sm:pb-16 lg:pb-20 flex flex-col justify-end">
+        <div className="max-w-3xl space-y-4 sm:space-y-5">
           
           {/* Badges: Custom Hour + Tagline + Rating */}
           <div className="flex flex-wrap items-center gap-2">
@@ -126,21 +126,21 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
             )}
           </div>
 
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black font-sans tracking-tight text-white drop-shadow-md">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl xl:text-7xl font-black font-sans tracking-tight text-white drop-shadow-lg leading-tight">
             {currentSlide.title}
           </h1>
 
           {currentSlide.genres && currentSlide.genres.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-1">
+            <div className="flex flex-wrap gap-2 pt-0.5">
               {currentSlide.genres.map(g => (
-                <span key={g} className="text-xs px-2.5 py-0.5 rounded-md bg-slate-800/80 text-slate-300 border border-slate-700">
+                <span key={g} className="text-xs px-2.5 py-0.5 rounded-md bg-slate-800/80 text-slate-300 border border-slate-700 font-medium">
                   {g}
                 </span>
               ))}
             </div>
           )}
 
-          <p className="text-slate-300 text-sm line-clamp-3 leading-relaxed drop-shadow">
+          <p className="text-slate-300 text-sm sm:text-base line-clamp-3 sm:line-clamp-4 leading-relaxed drop-shadow max-w-2xl">
             {currentSlide.synopsis}
           </p>
 
@@ -154,13 +154,13 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
                 {movieShowtimes.map(st => (
                   <div
                     key={st.id}
-                    className="px-3 py-1.5 rounded-xl bg-slate-900/90 border border-amber-500/40 text-amber-400 font-mono font-bold text-xs flex items-center gap-2 backdrop-blur shadow"
+                    className="px-3.5 py-2 rounded-xl bg-slate-900/90 border border-amber-500/40 text-amber-400 font-mono font-bold text-xs sm:text-sm flex items-center gap-2 backdrop-blur shadow-lg"
                   >
                     <span className="text-white font-bold">{st.startTime}</span>
-                    <span className="text-[10px] text-amber-300 font-semibold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
+                    <span className="text-[10px] sm:text-xs text-amber-300 font-semibold bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
                       {formatShowtimeDate(st.date)}
                     </span>
-                    <span className="text-[10px] text-slate-400">({getRoomName(st.roomId)})</span>
+                    <span className="text-[10px] sm:text-xs text-slate-400">({getRoomName(st.roomId)})</span>
                   </div>
                 ))}
               </div>
@@ -170,8 +170,8 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
           {/* Upcoming Info Pill */}
           {isUpcoming && (
             <div className="pt-2 flex items-center gap-2">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-cyan-950/50 border border-cyan-500/30 text-cyan-300 font-sans text-xs shadow-md">
-                <Calendar className="w-3.5 h-3.5 text-cyan-400" />
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-cyan-950/50 border border-cyan-500/30 text-cyan-300 font-sans text-xs sm:text-sm shadow-md">
+                <Calendar className="w-4 h-4 text-cyan-400" />
                 <span className="font-semibold">Próximamente en cartelera • Horarios por anunciar</span>
               </div>
             </div>
@@ -179,6 +179,20 @@ export const BillboardHeroMarquee: React.FC<BillboardHeroMarqueeProps> = ({
 
         </div>
       </div>
+
+      {/* Scroll indicator for TV and desktop */}
+      <button
+        onClick={() => {
+          const el = document.getElementById('cartelera-section');
+          el?.scrollIntoView({ behavior: 'smooth' });
+        }}
+        className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-0.5 text-slate-400/80 hover:text-amber-400 transition-colors animate-bounce cursor-pointer group"
+      >
+        <span className="text-[9px] font-bold tracking-widest uppercase font-mono opacity-75 group-hover:opacity-100">
+          Ver Cartelera
+        </span>
+        <ChevronDown className="w-4 h-4 text-amber-400" />
+      </button>
     </div>
   );
 };

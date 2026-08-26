@@ -10,8 +10,8 @@ export const GoogleMapsCard: React.FC<GoogleMapsCardProps> = ({
   compact = false,
   className = '',
 }) => {
-  // Coordenadas exactas: C.P. Tamanco (-5.794191, -74.283966)
-  const mapUrl = 'https://maps.google.com/maps?q=-5.794191,-74.283966&hl=es&z=17&output=embed';
+  // Coordenadas exactas: C.P. Tamanco (-5.794191, -74.283966) - Vista Satelital
+  const mapUrl = 'https://maps.google.com/maps?q=-5.794191,-74.283966&hl=es&z=18&t=k&output=embed';
   const directLink = 'https://www.google.com/maps/search/?api=1&query=-5.794191,-74.283966';
 
   return (
@@ -53,7 +53,7 @@ export const GoogleMapsCard: React.FC<GoogleMapsCardProps> = ({
         <iframe
           title="Ubicación Cines Argón en Tamanco"
           src={mapUrl}
-          className="w-full h-full border-0 filter grayscale-[20%] contrast-[110%]"
+          className="w-full h-full border-0"
           loading="lazy"
           allowFullScreen
         />

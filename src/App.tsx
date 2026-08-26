@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Analytics } from '@vercel/analytics/react';
 import { Navbar, PublicSection } from './components/layout/Navbar';
 import { BillboardView } from './views/BillboardView';
 import { FloatingWhatsAppButton } from './components/common/FloatingWhatsAppButton';
@@ -22,6 +23,9 @@ export function App() {
       <main>
         <BillboardView activeSection={publicSection} />
       </main>
+
+      {/* Vercel Analytics */}
+      <Analytics />
 
     </div>
   );
